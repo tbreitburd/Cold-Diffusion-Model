@@ -5,3 +5,5 @@ Report/*
 !Report/refs.bib
 
 docs/latex/
+
+src/__pycache__/

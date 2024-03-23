@@ -149,13 +149,65 @@
 
 \chapter{Training a Diffusion Model}
 
-\section{Regular Denoising Diffusion Probabilistic Model (DDPM)}
+\section{Denoising Diffusion Probabilistic Model (DDPM)}
 
-Describe this model and the training algorithm.
+\subsection{Diffusion Models}
+
+Diffusion models are a class of probabilistic latent variable models. They consist of an encoder and decoder. The encoder takes the input data and maps it to a latent space in a series of steps, resulting in a series of intermediate latent vairables. The encoder is similar to variational autoencoders (VAEs) in that it maps the input data to a latent space. However, the particularity of the encoder here is that the mappings it will apply at each time step are predetermnied. The key part is the decoder which is trained to learn what is the reverse process of the encoder, therefore being then able to produce samples\cite[p.348]{prince2023understanding}.
+
+\subsection{Denoising Diffusion Probabilistic Model (DDPM)}
+
+In this report, the writing conventions of the Prince textbook will be followed\cite{prince2023understanding}. The model used for this project is a DDPM. For this mode, the encoder takes in input data $\mathbf{x}$ and maps it to a latent space $\mathbf{z_{T}}$, of the same dimensionality as $\mathbf{x}$, in a series of steps: $\mathbf{z_{0}} \rightarrow \mathbf{z_{1}} \rightarrow \ldots \rightarrow \mathbf{z_{T}}$. This is defined by a Markov Chain that is known, which at each step adds Gaussian Noise following a Noise or Variance Schedule, $\beta_{1, \dots, T}$. As it is a Markov Chain, and a type of variational autoencoder, the encoder can be described by an approximate probability distribution $q$ such that\cite{ho2020denoising}:
+
+\begin{equation}
+q(\mathbf{z}_{1:T}|\mathbf{x}) = \prod{t=1}{T}q(\mathbf{z}_{t}|\mathbf{z}_{1:t-1}))
+\end{equation}
+
+Where the individual step is given by:
+
+\begin{equation}
+  q(\mathbf{z}_{t}|\mathbf{z}_{t-1}) = \mathcal{N}(\mathbf{z}_{t}; \sqrt{1 - \beta_{t}}\mathbf{z}_{t-1}, \beta_{t}\mathbf{I})
+\end{equation}
+
+In other words, $\beta_{t}$ describes how much noise is going to be added to the input data at each step $t$. Prince's textbook also provides a closed form expression which shows this more clearly\cite{prince2023understanding}:
+
+\begin{equation}
+  \mathbf{z}_{1} = \sqrt{1 - \beta_{1}}\mathbf{x} + \sqrt{\beta_{1}}\mathbf{\epsilon}_{1}
+\end{equation}
+
+And it can be shown that after t steps, this gives:
+
+\begin{equation}
+  \mathbf{z}_{t} = \sqrt{\alpha_{t}}\mathbf{x} + \sqrt{1 - \alpha_{t}}\mathbf{\epsilon}
+\end{equation}
+
+where $\alpha_{t} = \prod_{s=1}^{t} 1 - \beta_{s}$ and $\mathbf{\epsilon} \sim \mathcal{N}(0, \mathbf{I})$, is a sample from a standard normal distribution, and therefore is the actual noise added. The decoder is trained to learn the reverse process of the encoder, or simply how to go from $\mathbf{z}_{T}$ to $\mathbf{z}_{T-1}$, continuing back through the latent variables to the input data $\mathbf{x}$. Coming back to the approximate probability distribution $q$, the decoder is trained to learn the reverse distributions $q(\mathbf{z}_{t-1}|\mathbf{z}_{t})$. Approximating them as normal distributions, they can be written:
+
+\begin{equation}
+  Pr(\mathbf{z}_{t-1}|\mathbf{z}_{t}, \phi{t}) = \mathcal{N}_{z_{t-1}}(\mathbf{f}_{t}[\mathbf{z}_{t}, \phi_{t}], \sigma_{t}^{2}\mathbf{I})
+\end{equation}
+
+where $\mathbf{f}_{t}$ is a neural network that takes $\mathbf{z}_{t}$ as input and has parameters $\phi_{t}$, which here is just the timestep $t$. The reason why the model predicts the mean of the normal distribution with the variance being fixed to $\sigma_{t}^{2}\mathbf{I}$ is discussed in greater detail in the Ho et al. (2020) paper\cite{ho2020denoising}. The training algorithm can then be written as follows:
+
+\begin{definitionbox}{Training Algorithm for DDPM reverse process \cite{ho2020denoising}}
+  \begin{algorithmic}
+    \State \textbf{Input:} Data $\mathbf{x}$
+    \State \textbf{Output:} $\mathbf{\mu_{t}} = \mathbf{f}_{t}[\mathbf{z}_{t},t]$
+    \State \textbf{repeat}
+      \For{$i \in \mathcal{B}$} \Comment{For each training example index in batch}
+        \State $t \sim \mathcal{U}(1, \dots, T)$ \Comment{Sample a random time step}
+        \State $\mathbf{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ \Comment{Sample noise}
+        \State $L = ||\mathbf{\epsilon} - \mathbf{\epsilon}_{\phi}(\sqrt{\alpha_{t}}\mathbf{x} + \sqrt{1 - \alpha_{t}}\mathbf{\epsilon}, t)||^{2}$ \Comment{Compute individual noise}
+      \EndFor \Comment{Accumulate losses for batch and take gradient descent step}
+    \State \textbf{until} convergence
+  \end{algorithmic}
+\end{definitionbox}
+
+Predicting the noise in the algorithm instead of the mean is done by modifying the parameterization of $\mathbf{f}_{t}[\mathbf{z}_{t}, t]$ \cite{ho2020denoising}.
 
 \section{Training the Model on the MNIST Dataset}
 
-Describe the training process and the results. FID and IS scores.
+Training the model is done
 
 \section{Fine-Tuning the Model}
 
@@ -181,5 +233,10 @@ Train model with degradation function and discuss results.
 
 Evaluate the fidelity of the samples generated by the two models, discussing any differences between them.
 
-\end{document}
 
+
+
+\bibliographystyle{plain}
+\bibliography{refs.bib}
+
+\end{document}
