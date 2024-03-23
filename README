@@ -1,0 +1,49 @@
+# M2 Coursework - Training Diffusion Models on the MNIST Dataset
+
+## Description
+This reporsitory contains the code and written report for the M2 Coursework. The aim was to _________________
+
+## Contents
+
+Inside this ```tmb76/``` directory, there are a few sub-directories one can explore. There's the code directory (```src/```), which contains all the code used in the solver. An important note is that the code will give outputs in the command line but also store the plots in a ```Plots/``` directory which will be created as the first code file is run. So if there is no ```Plots/``` directory in the repository yet, running the solver once should lead to creating one. The last one is the ```Report/``` directory, which contains the LaTeX file for the report, as well as the pdf version of it, along with the references ```.bib``` file.
+More importantly, there are an ```environment.yml``` and ```Dockerfile``` files, which one is advised to use.
+
+## How to run the code
+For permissions reasons, the ```Dockerfile``` is not set up to pull the repository directly as it builds the image. Therefore, one must first download this repository to their local machine and then are free to build the Docker image from the ```Dockerfile```.
+
+To run the solver on a Docker container, one first has to build the image and run the container. This can be done as follows:
+
+```bash
+$ docker build -t m2_coursework .
+$ docker run --rm -ti m2_coursework
+```
+
+The ```m2_coursework``` is not a strict instruction, it can be set to any other name the user may prefer.
+
+If there is a need to get the plots back on the local machine, the second line above can be ran without the ```--rm``` and also set the container name using ```--name=container_name``` (any valid name is fine). From there, run all the code as instructed below. Once all desired outputs and plots have been obtained. One can exit the container and then run:
+
+```bash
+$ docker cp docker cp container_name:/M2_Coursework/Plots ./Plots
+```
+
+The ```Plots/``` directory will get copied into the local folder the container was ran from.
+
+As you run this, the Docker image will get built and the container ran, providing the user with a bash terminal-like interface where the solver code can be run as follows:
+
+```bash
+$ python src/_________
+```
+
+where ```*``` can be either ```v``` or ```vii```. Each contain the code to get the results for part (v) and part (vii) of the coursework.
+
+Note on time: Running the ```part_v.py``` file should take close to 2 minutes. Running the ```part_vii.py``` file should take longer, closer to 5-6 minutes. This is based on running all of these on a MacBook Air M2 (2022, Ventura 13.2.1), with 8 GB of Memory, so this may be slower on a container.
+
+
+## Further development
+
+If one wishes to further develop this code, such as adding more algorithms to try, when the image is built, git is installed and initialized and the pre-commit hooks are installed.
+
+## Use of Generative AI
+
+GitHub Copilot's autocompletion feature was used in coding the project, when writing docstrings for the functions, though sometimes adding elements ourselves, and for repetitive parts of the code.
+ChatGPT was also used to help in debugging the code, by providing the traceback as a prompt when an error was difficult to understand, asking to explain what the error refers to.
