@@ -1,0 +1,185 @@
+\documentclass[12pt]{report} % Increased the font size to 12pt
+\usepackage{epigraph}
+\usepackage{geometry}
+
+% Optional: customize the style of epigraphs
+\setlength{\epigraphwidth}{0.5\textwidth} % Adjust the width of the epigraph
+\renewcommand{\epigraphflush}{flushright} % Align the epigraph to the right
+\renewcommand{\epigraphrule}{0pt} % No horizontal rule
+\usepackage[most]{tcolorbox}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bbm}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref} % Added for hyperlinks
+\usepackage{listings} % Added for code listings
+\usepackage{color}    % Added for color definitions
+\usepackage[super]{nth}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{cite}
+\usepackage{algpseudocode}
+\usetikzlibrary{shapes.geometric, arrows, positioning}
+
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=red!30]
+\tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
+\tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+\tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+% Define the graphics path
+%\graphicspath{{./Plots/}}
+
+% Define the header and footer for general pages
+\pagestyle{fancy}
+\fancyhf{} % Clear all header and footer fields
+\fancyhead{} % Initially, the header is empty
+\fancyfoot[C]{\thepage} % Page number at the center of the footer
+\renewcommand{\headrulewidth}{0pt} % No header line on the first page of chapters
+\renewcommand{\footrulewidth}{0pt} % No footer line
+
+% Define the plain page style for chapter starting pages
+\fancypagestyle{plain}{%
+  \fancyhf{} % Clear all header and footer fields
+  \fancyfoot[C]{\thepage} % Page number at the center of the footer
+  \renewcommand{\headrulewidth}{0pt} % No header line
+}
+
+% Apply the 'fancy' style to subsequent pages in a chapter
+\renewcommand{\chaptermark}[1]{%
+  \markboth{\MakeUppercase{#1}}{}%
+}
+
+% Redefine the 'plain' style for the first page of chapters
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+% Header settings for normal pages (not the first page of a chapter)
+\fancyhead[L]{\slshape \nouppercase{\leftmark}} % Chapter title in the header
+\renewcommand{\headrulewidth}{0.4pt} % Header line width on normal pages
+
+\setlength{\headheight}{14.49998pt}
+\addtolength{\topmargin}{-2.49998pt}
+% Define colors for code listings
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Setup for code listings
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+% Definition of the tcolorbox for definitions
+\newtcolorbox{definitionbox}[1]{
+  colback=red!5!white,
+  colframe=red!75!black,
+  colbacktitle=red!85!black,
+  title=#1,
+  fonttitle=\bfseries,
+  enhanced,
+}
+
+% Definition of the tcolorbox for remarks
+\newtcolorbox{remarkbox}{
+  colback=blue!5!white,     % Light blue background
+  colframe=blue!75!black,   % Darker blue frame
+  colbacktitle=blue!85!black, % Even darker blue for the title background
+  title=Remark:,            % Title text for remark box
+  fonttitle=\bfseries,      % Bold title font
+  enhanced,
+}
+
+% Definition of the tcolorbox for examples
+\newtcolorbox{examplebox}{
+  colback=green!5!white,
+  colframe=green!75!black,
+  colbacktitle=green!85!black,
+  title=Example:,
+  fonttitle=\bfseries,
+  enhanced,
+}
+
+% Definitions and examples will be put in these environments
+\newenvironment{definition}
+    {\begin{definitionbox}}
+    {\end{definitionbox}}
+
+\newenvironment{example}
+    {\begin{examplebox}}
+    {\end{examplebox}}
+
+\geometry{top=1.5in} % Adjust the value as needed
+% ----------------------------------------------------------------------------------------
+
+
+\title{M2 Applications of Machine Learning}
+\author{CRSiD: tmb76}
+\date{University of Cambridge}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\chapter*{Using a Diffusion Model on the MNIST Dataset}
+
+\chapter{Training a Diffusion Model}
+
+\section{Regular Denoising Diffusion Probabilistic Model (DDPM)}
+
+Describe this model and the training algorithm.
+
+\section{Training the Model on the MNIST Dataset}
+
+Describe the training process and the results. FID and IS scores.
+
+\section{Fine-Tuning the Model}
+
+2 different sets of hyperparams, compare results, both good and bad samples from the model.
+
+
+
+
+
+\chapter{Custom Degradation Function}
+
+As mentioned in section 1.1, degreadation function is blablabla. In Bansal et al. blablabla.
+
+\section{A ... degradation function}
+
+Describe the custom degradation function.
+
+\section{Training the modified model on the MNIST dataset}
+
+Train model with degradation function and discuss results.
+
+\section{Comparing with the original model}
+
+Evaluate the fidelity of the samples generated by the two models, discussing any differences between them.
+
+\end{document}
+

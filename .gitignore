@@ -1,0 +1,7 @@
+.DS_Store
+Report/*
+!Report/Report.tex
+!Report/Report.pdf
+!Report/refs.bib
+
+docs/latex/
