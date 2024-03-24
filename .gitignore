@@ -10,3 +10,5 @@ src/__pycache__/
 
 contents/
 data/
+
+ddpm_mnist.pth
