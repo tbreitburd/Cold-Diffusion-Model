@@ -12,6 +12,7 @@ import torch
 import random
 import os
 import matplotlib.pyplot as plt
+import numpy as np
 from torchmetrics.image.fid import FrechetInceptionDistance
 from torchmetrics.image.inception import InceptionScore
 
@@ -91,12 +92,14 @@ def plot_losses(losses, avg_losses, num_epochs, model):
     @return None
     """
 
-    x = range(len(losses)) / num_epochs
+    x = np.arange(len(losses)) / (len(losses) // num_epochs)
+    x_epoch = x[:: (len(losses) // num_epochs)].copy() + 1
+
     plt.style.use("ggplot")
     plt.figure(figsize=(10, 5))
     plt.plot(x, losses, color="green", label="Loss")
     plt.plot(
-        x,
+        x_epoch,
         avg_losses,
         linestyle="--",
         marker="+",
@@ -128,7 +131,7 @@ def plot_fid(fid_scores, num_epochs, model):
 
     @return None
     """
-    x = range(len(fid_scores))
+    x = np.arange(num_epochs)
     plt.style.use("ggplot")
     plt.figure(figsize=(10, 5))
     plt.plot(x, fid_scores, color="green")
@@ -155,7 +158,7 @@ def plot_is(is_scores, num_epochs, model):
 
     @return None
     """
-    x = range(len(is_scores))
+    x = np.arange(num_epochs)
     plt.style.use("ggplot")
     plt.figure(figsize=(10, 5))
     plt.plot(x, is_scores, color="green")

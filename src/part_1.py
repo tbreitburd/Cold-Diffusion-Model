@@ -11,6 +11,7 @@ This module is used to train the model and make predictions.
 
 # Importing the necessary libraries
 import sys
+import warnings
 import numpy as np
 import torch
 import torch.nn as nn
@@ -24,30 +25,62 @@ from cnn_module import CNN
 from ddpm_module import DDPM
 import funcs
 
+# Ignore UserWarning from inception score metric
+warnings.filterwarnings("ignore", category=UserWarning)
+
 # Get the number of epochs from the command line
 num_epochs = int(sys.argv[1])
+hyper_params = sys.argv[2]
 
 
 # --------- Training the model ------------
 # Code from the coursework_starter notebook
 # ----------------------------------------
 
+if hyper_params == "default":
+    # Default hyperparameters
+    betas = (1e-4, 0.02)
+    n_T = 1000
+    lr = 2e-4
+    n_hidden = (16, 32, 32, 16)
+    batch_size = 128
+elif hyper_params == "light":
+    # More epochs
+    betas = (1e-4, 0.02)
+    n_T = 100
+    lr = 2e-4
+    n_hidden = (16, 64, 16)
+    batch_size = 128
+elif hyper_params == "more_capacity":
+    # More capacity
+    betas = (1e-4, 0.02)
+    n_T = 1000
+    lr = 2e-4
+    n_hidden = (64, 128, 256, 128, 64)
+    batch_size = 128
+elif hyper_params == "testing":
+    # Testing
+    betas = (1e-4, 0.02)
+    n_T = 1000
+    lr = 2e-4
+    n_hidden = (16, 32, 32, 16)
+    batch_size = 128
 
 # Perform some basic preprocessing on the data loader
 tf = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (1.0))])
 dataset = MNIST("./data", train=True, download=True, transform=tf)
 dataloader = DataLoader(
-    dataset, batch_size=128, shuffle=True, num_workers=0, drop_last=True
+    dataset, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=True
 )
 
 
 # Create our model with a given choice of hidden layers, activation function,
 # and learning rate
-gt = CNN(in_channels=1, expected_shape=(28, 28), n_hidden=(16, 32, 32, 16), act=nn.GELU)
+gt = CNN(in_channels=1, expected_shape=(28, 28), n_hidden=n_hidden, act=nn.GELU)
 # For testing: (16, 32, 32, 16)
 # For more capacity (for example): (64, 128, 256, 128, 64)
-ddpm = DDPM(gt=gt, betas=(1e-4, 0.02), n_T=1000)
-optim = torch.optim.Adam(ddpm.parameters(), lr=2e-4)
+ddpm = DDPM(gt=gt, betas=betas, n_T=n_T)
+optim = torch.optim.Adam(ddpm.parameters(), lr=lr)
 
 
 # We create an instance of the Accelerator class to handle device placement
@@ -89,8 +122,6 @@ for i in range(num_epochs):
         # fmt: off
         avg_loss = np.average(losses[min(len(losses) - 100, 0):])
 
-        avg_losses.append(avg_loss)
-
         pbar.set_description(
             f"loss: {avg_loss:.3g}" # noqa E231
         )  # Show running average of loss in progress bar
@@ -105,8 +136,11 @@ for i in range(num_epochs):
         grid = make_grid(xh, nrow=4)
 
         # Evaluate the model using FID and Inception Score
-        FID.append(funcs.get_fid(ddpm, dataset, 16, accelerator.device))
-        IS.append(funcs.get_is(ddpm, False, 16, accelerator.device))
+        avg_losses.append(avg_loss)
+        fid_temp = funcs.get_fid(ddpm, dataset, 16, accelerator.device)
+        is_temp = funcs.get_is(ddpm, False, 16, accelerator.device)[0]
+        FID.append(fid_temp)
+        IS.append(is_temp)
 
         # fmt: off
         # Save samples to `./contents` directory
@@ -125,14 +159,14 @@ funcs.plot_is(IS, num_epochs, "DDPM_default")
 
 # Evaluate the full model using FID and Inception Score
 
-FID_end = funcs.get_fid(ddpm, dataset, 100, accelerator.device)
+FID_end = funcs.get_fid(ddpm, dataset, 10, accelerator.device)
 
 print(f"FID after full training: {FID_end}")
 
-IS_end = funcs.get_is(ddpm, False, 100, accelerator.device)
+IS_end = funcs.get_is(ddpm, False, 10, accelerator.device)
 
-print(f"IS of generated images after full training: {IS_end}")
+print(f"IS of generated images after full training: {IS_end[0]} +-", IS_end[1])
 
-IS_real_end = funcs.get_is(dataset, True, 100, accelerator.device)
+IS_real_end = funcs.get_is(dataset, True, 10, accelerator.device)
 
-print(f"IS of real images: {IS_real_end}")
+print(f"IS of real images: {IS_real_end[0]} +-", IS_real_end[1])
