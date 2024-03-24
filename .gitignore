@@ -12,3 +12,6 @@ contents/
 data/
 
 ddpm_mnist.pth
+ddpm_mnist_100_default.pth
+
+Plots/
