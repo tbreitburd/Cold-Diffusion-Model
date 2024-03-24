@@ -10,6 +10,7 @@ This module is used to train the model and make predictions.
 
 
 # Importing the necessary libraries
+import sys
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,6 +22,15 @@ from torchvision.datasets import MNIST
 from torchvision.utils import save_image, make_grid
 from cnn_module import CNN
 from ddpm_module import DDPM
+import funcs
+
+# Get the number of epochs from the command line
+num_epochs = int(sys.argv[1])
+
+
+# --------- Training the model ------------
+# Code from the coursework_starter notebook
+# ----------------------------------------
 
 
 # Perform some basic preprocessing on the data loader
@@ -58,10 +68,12 @@ with torch.no_grad():
 
 # We train the model for __ epochs
 
-n_epoch = 50
 losses = []
+FID = []
+IS = []
+avg_losses = []
 
-for i in range(n_epoch):
+for i in range(num_epochs):
     ddpm.train()
 
     pbar = tqdm(dataloader)  # Wrap our loop with a visual progress bar
@@ -76,6 +88,9 @@ for i in range(n_epoch):
         losses.append(loss.item())
         # fmt: off
         avg_loss = np.average(losses[min(len(losses) - 100, 0):])
+
+        avg_losses.append(avg_loss)
+
         pbar.set_description(
             f"loss: {avg_loss:.3g}" # noqa E231
         )  # Show running average of loss in progress bar
@@ -89,6 +104,10 @@ for i in range(n_epoch):
         )  # Can get device explicitly with `accelerator.device`
         grid = make_grid(xh, nrow=4)
 
+        # Evaluate the model using FID and Inception Score
+        FID.append(funcs.get_fid(ddpm, dataset, 16, accelerator.device))
+        IS.append(funcs.get_is(ddpm, False, 16, accelerator.device))
+
         # fmt: off
         # Save samples to `./contents` directory
         save_image(grid, f"./contents/ddpm_sample_{i:04d}.png") # noqa E231
@@ -96,3 +115,24 @@ for i in range(n_epoch):
 
         # save model
         torch.save(ddpm.state_dict(), f"./ddpm_mnist.pth")  # noqa F541
+
+
+# Plot the losses, FID and IS scores over the training process
+funcs.plot_losses(losses, avg_losses, num_epochs, "DDPM_default")
+funcs.plot_fid(FID, num_epochs, "DDPM_default")
+funcs.plot_is(IS, num_epochs, "DDPM_default")
+
+
+# Evaluate the full model using FID and Inception Score
+
+FID_end = funcs.get_fid(ddpm, dataset, 100, accelerator.device)
+
+print(f"FID after full training: {FID_end}")
+
+IS_end = funcs.get_is(ddpm, False, 100, accelerator.device)
+
+print(f"IS of generated images after full training: {IS_end}")
+
+IS_real_end = funcs.get_is(dataset, True, 100, accelerator.device)
+
+print(f"IS of real images: {IS_real_end}")
