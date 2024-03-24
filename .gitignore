@@ -15,3 +15,5 @@ ddpm_mnist.pth
 ddpm_mnist_100_default.pth
 
 Plots/
+
+test_area.ipynb
