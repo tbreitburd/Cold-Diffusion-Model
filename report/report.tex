@@ -219,9 +219,11 @@ Training the model is done
 
 \chapter{Custom Degradation Function}
 
-As mentioned in section 1.1, degreadation function is blablabla. In Bansal et al. blablabla.
+In Bansal et al. (2022, \cite{bansal2022cold}), a conceptual summary of degradation functions is given. Starting with image $\mathbf{x} \in \mathbb{R}$, the degradation of the image, or forward process of the encoder for the DDPM described in section 1.1.2, can be considered as follows: $\mathbf{x}_{t} = D(\mathbf{x}, t)$, where $D$ is the degradation operator and $t$ is the severity of the degradation. In other words, $D(\mathbf{x}, 0) = \mathbf{x}$. In Chapter 1, the $D$ operator consisted of adding Gaussian noise with variance described by the Variance/Noise Schedule $\beta_{1, \dots, T}$. In this chapter, a custom degradation function, or operator $D$, will be described and used to train the model on the MNIST dataset. The important part of the degradation function is that an inverse process, $R$, is required to invert $D$ and satisfies: $R(\mathbf{x}_t, t) \approx \mathbf{x}$, and $R(\mathbf{x}_t, 1) \approx \mathbf{x}_{t-1}$. The degradation function will be described in the next section. And as was discussed in Chapter 1, this is implemented through a neural network parameterized by $\phi$ and trained to minimize the loss $L = ||\mathbf{x} - R_{\phi}(D(\mathbf{x}, t), t)||$, taking an $l_{1}$ norm \cite{bansal2022cold}.
 
 \section{A ... degradation function}
+
+
 
 Describe the custom degradation function.
 
