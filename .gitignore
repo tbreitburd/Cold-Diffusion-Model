@@ -7,3 +7,6 @@ Report/*
 docs/latex/
 
 src/__pycache__/
+
+contents/
+data/
