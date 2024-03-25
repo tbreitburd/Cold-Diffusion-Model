@@ -9,6 +9,7 @@ docs/latex/
 src/__pycache__/
 
 contents/
+contents_custom/
 data/
 
 ddpm_mnist.pth

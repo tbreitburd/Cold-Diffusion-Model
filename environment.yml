@@ -25,8 +25,6 @@ dependencies:
   - libcxx=14.0.6
   - libdeflate=1.17
   - libffi=3.4.4
-  - libgfortran=5.0.0
-  - libgfortran5=11.3.0
   - libopenblas=0.3.21
   - libpng=1.6.39
   - libprotobuf=3.20.3
@@ -105,10 +103,10 @@ dependencies:
       - requests==2.31.0
       - safetensors==0.4.2
       - stack-data==0.6.3
-      - torch==2.2.0
-      - torch-fidelity==0.3.0
-      - torcheval==0.0.7
-      - torchvision==0.17.0
+      - torch
+      - torch-fidelity
+      - torcheval
+      - torchvision
       - tornado==6.4
       - tqdm==4.66.2
       - traitlets==5.14.2

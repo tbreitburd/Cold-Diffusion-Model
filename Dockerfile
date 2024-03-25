@@ -6,6 +6,8 @@ COPY . /M2_Coursework
 
 WORKDIR /M2_Coursework
 
+RUN apt-get update && apt-get install -y gcc
+
 RUN conda env update -f environment.yml --name M2_CW
 
 RUN apt-get update && apt-get install -y \
