@@ -43,7 +43,6 @@ def schedules_7(order: int, T: int, type: str) -> Dict[str, torch.Tensor]:
     idx_groups = list(np.array_split(range(28), 7))
     backward = list(range(3, -1, -1))
     forward = list(range(4, 7))
-    print(forward, backward)
     index = []
     if order == 1:
         for i in range(half_point + 1):
