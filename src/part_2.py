@@ -133,10 +133,10 @@ for i in range(num_epochs):
         )  # Can get device explicitly with `accelerator.device`
 
         # Normalize the degraded images for better visualization
-        for i in range(16):
-            deg_min = torch.min(degraded[i])
-            deg_max = torch.max(degraded[i])
-            degraded[i] = (degraded[i] - deg_min) * (0.5 - (-0.5)) / (
+        for j in range(16):
+            deg_min = torch.min(degraded[j])
+            deg_max = torch.max(degraded[j])
+            degraded[j] = (degraded[j] - deg_min) * (0.5 - (-0.5)) / (
                 deg_max - deg_min
             ) - 0.5
 
