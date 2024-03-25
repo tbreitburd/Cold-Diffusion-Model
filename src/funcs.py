@@ -29,7 +29,12 @@ def get_fid(generator, real_data, num_images, device):
         real_img = real_img.to(torch.uint8).expand(-1, 3, -1, -1)
 
         # Sample images from the generator (DDPM)
-        gen_img = generator.sample(num_images, (1, 28, 28), device)
+        if generator.__class__.__name__ == "DDPM":
+            gen_img = generator.sample(num_images, (1, 28, 28), device)
+        else:
+            _, __, ___, gen_img = generator.sample(
+                num_images, real_data, (1, 28, 28), device
+            )
 
         # Make the image have 3 identical channels
         gen_img = gen_img.expand(-1, 3, -1, -1)
@@ -59,6 +64,35 @@ def get_is(data_source, is_real, num_images, device):
         else:
             # Sample images from the generator (DDPM)
             img = data_source.sample(num_images, (1, 28, 28), device)
+
+            # Make the image have 3 identical channels
+            img = img.expand(-1, 3, -1, -1)
+
+            img = img.to("cpu")
+
+        # Initialize the IS metric
+        is_score = InceptionScore("logits_unbiased", normalize=True)
+
+        is_score.update(img)
+        is_score = is_score.compute()
+
+        return is_score
+
+
+def get_is_custom(generator, data_source, is_real, num_images, device):
+    with torch.no_grad():
+        if is_real:
+            # Sample images from the real images dataset
+            num_samples = len(data_source)
+            idx = random.sample(range(num_samples), num_images)
+            img = torch.stack([data_source[i][0].clone() for i in idx])
+            img = img.expand(-1, 3, -1, -1)
+
+        else:
+            # Sample images from the generator (DDPM)
+            _, __, ___, img = generator.sample(
+                num_images, data_source, (1, 28, 28), device
+            )
 
             # Make the image have 3 identical channels
             img = img.expand(-1, 3, -1, -1)
