@@ -32,6 +32,9 @@ warnings.filterwarnings("ignore", category=UserWarning)
 num_epochs = int(sys.argv[1])
 hyper_params = sys.argv[2]
 
+# Set random seeds
+torch.manual_seed(75016)
+np.random.seed(75016)
 
 # --------- Training the model ------------
 # Code from the coursework_starter notebook
@@ -45,7 +48,7 @@ if hyper_params == "default":
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
 elif hyper_params == "light":
-    # More epochs
+    # Shallower CNN and less degradation
     betas = (1e-4, 0.02)
     n_T = 100
     lr = 2e-4
@@ -91,7 +94,7 @@ accelerator = Accelerator()
 ddpm, optim, dataloader = accelerator.prepare(ddpm, optim, dataloader)
 
 
-# Perform a quick sanity check
+# Perform a quick sanity check, making sure everything works
 for x, _ in dataloader:
     break
 
@@ -99,7 +102,7 @@ with torch.no_grad():
     ddpm(x)
 
 
-# We train the model for __ epochs
+# We train the model for the chosen number epochs
 
 losses = []
 FID = []
@@ -148,7 +151,10 @@ for i in range(num_epochs):
         # fmt: on
 
         # save model
-        torch.save(ddpm.state_dict(), f"./ddpm_mnist.pth")  # noqa F541
+        torch.save(
+            ddpm.state_dict(),
+            "./ddpm_mnist_" + str(num_epochs) + "_" + hyper_params + ".pth",
+        )  # noqa F541
 
 
 # Plot the losses, FID and IS scores over the training process
@@ -159,14 +165,14 @@ funcs.plot_is(IS, num_epochs, "DDPM_default")
 
 # Evaluate the full model using FID and Inception Score
 
-FID_end = funcs.get_fid(ddpm, dataset, 10, accelerator.device)
+FID_end = funcs.get_fid(ddpm, dataset, 100, accelerator.device)
 
 print(f"FID after full training: {FID_end}")
 
-IS_end = funcs.get_is(ddpm, False, 10, accelerator.device)
+IS_end = funcs.get_is(ddpm, False, 100, accelerator.device)
 
 print(f"IS of generated images after full training: {IS_end[0]} +-", IS_end[1])
 
-IS_real_end = funcs.get_is(dataset, True, 10, accelerator.device)
+IS_real_end = funcs.get_is(dataset, True, 100, accelerator.device)
 
 print(f"IS of real images: {IS_real_end[0]} +-", IS_real_end[1])
