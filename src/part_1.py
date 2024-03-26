@@ -123,7 +123,7 @@ for i in range(num_epochs):
 
         losses.append(loss.item())
         # fmt: off
-        avg_loss = np.average(losses[min(len(losses) - 100, 0):])
+        avg_loss = np.average(losses[max(len(losses) - 100, 0):])
 
         pbar.set_description(
             f"loss: {avg_loss:.3g}" # noqa E231
@@ -133,10 +133,11 @@ for i in range(num_epochs):
 
     ddpm.eval()
     with torch.no_grad():
-        xh = ddpm.sample(
+        degraded, xh = ddpm.sample(
             16, (1, 28, 28), accelerator.device
         )  # Can get device explicitly with `accelerator.device`
         grid = make_grid(xh, nrow=4)
+        grid1 = make_grid(degraded, nrow=4)
 
         # Evaluate the model using FID and Inception Score
         avg_losses.append(avg_loss)
@@ -148,9 +149,16 @@ for i in range(num_epochs):
         # fmt: off
         # Save samples to `./contents` directory
         save_image(grid, f"./contents/ddpm_sample_{i:04d}.png") # noqa E231
+        save_image(grid1, f"./contents/ddpm_degraded_{i:04d}.png") # noqa E231
         # fmt: on
 
         # save model
+        if i == 0 or i == 10:
+            torch.save(
+                ddpm.state_dict(),
+                "./ddpm_mnist_" + str(num_epochs) + "_" + hyper_params + ".pth",
+            )  # noqa F541
+
         torch.save(
             ddpm.state_dict(),
             "./ddpm_mnist_" + str(num_epochs) + "_" + hyper_params + ".pth",
