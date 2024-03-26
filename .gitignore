@@ -11,6 +11,12 @@ src/__pycache__/
 contents/
 contents_custom/
 data/
+contents_lap/
+notebooks/__pycache__/
+notebooks/contents_custom/
+notebooks/contents/
+notebooks/data/
+notebooks/contents_lap
 
 *.pth
 
