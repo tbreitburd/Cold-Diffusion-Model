@@ -1,9 +1,9 @@
-"""!@file part_1.py
+"""!@file training_grounds.py
 
-@brief This file contains the first part of the project.
-@details This file contains the first part of the project.
-The first part of the project is the implementation of the CNN module.
-This module is used to train the model and make predictions.
+@brief This file contains a training ground for the different diffusion models.
+
+@details This file contains a training ground for the different diffusion models.
+The code is used to train the model and save the model states.
 
 @author Created by T.Breitburd on 23/03/2024
 """

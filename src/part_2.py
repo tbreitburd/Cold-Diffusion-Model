@@ -1,3 +1,35 @@
+"""!@file part_2.py
+
+@brief This file contains the second part of the project.
+
+@details This file contains the second part of the project.
+The second part of the project is the implementation of the custom diffusion module.
+This module is used to train the model and make predictions.
+The code is run from the command line with the following command:
+
+python part_2.py num_epochs 'hyper_params' 'orientation'
+
+Available hyperparameters are:
+- 'default_7': Default hyperparameters with grouping 7
+- 'default_28': Default hyperparameters with grouping 28
+- 'more_capacity': More capacity
+- 'testing': A 2nd set of default hyperparameters for comparison
+
+Grouping is the number of groups to split the pixels into. Grouping 7 therefore
+averages 4 rows/columsn at a time. Grouping 28 averages 1 row/column at a time.
+One is lighter to run, but removes more information from the image as you degrade it.
+
+Available orientations are:
+- 'row': Row averaging
+- 'col': Column averaging
+
+The code saves the model and the generated images every 20 epochs,
+and plots the losses, FID and IS scores over the training process.
+The final FID and IS scores are also printed.
+
+@author Created by T.Breitburd on 23/03/2024"""
+
+
 import sys
 import os
 import warnings
@@ -19,7 +51,8 @@ import funcs
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-# Get the number of epochs from the command line
+# Get the number of epochs, the hyperparameter to choose, and the orientation
+# of the averaging from the command line
 num_epochs = int(sys.argv[1])
 hyper_params = sys.argv[2]
 orientation = sys.argv[3]
@@ -34,12 +67,13 @@ content_dir = os.path.join(project_dir, "contents_custom")
 if not os.path.exists(content_dir):
     os.makedirs(content_dir)
 
+
 # ------------- Training the model ---------------
 # Code partly from the coursework_starter notebook
 # ------------------------------------------------
 
 if hyper_params == "default_7":
-    # Default hyperparameters
+    # Default hyperparameters, with groupings
     order = 3
     grouping = "7"
     n_T = 7
@@ -76,10 +110,9 @@ dataloader = DataLoader(
 # Create our model with a given choice of hidden layers, activation function,
 # and learning rate
 gt = CNN(in_channels=1, expected_shape=(28, 28), n_hidden=n_hidden, act=nn.GELU)
-# For testing: (16, 32, 32, 16)
-# For more capacity (for example): (64, 128, 256, 128, 64)
 
 
+# Define the custom diffusion model
 if orientation == "row":
     dif_model = Row_Averaging(gt=gt, row_order=order, grouping=grouping, n_T=n_T)
 elif orientation == "col":
@@ -104,8 +137,7 @@ with torch.no_grad():
     dif_model(x)
 
 
-# We train the model for the chosen number epochs
-
+# We now train the model for the chosen number epochs
 losses = []
 FID = []
 IS = []
@@ -134,24 +166,9 @@ for i in range(num_epochs):
         optim.step()
 
     dif_model.eval()
+
+    # And then generate some samples and evaluate the model
     with torch.no_grad():
-        original, degraded, direct, xh = dif_model.sample(
-            16, dataset, (1, 28, 28), accelerator.device
-        )  # Can get device explicitly with `accelerator.device`
-
-        # Normalize the degraded images for better visualization
-        for j in range(16):
-            deg_min = torch.min(degraded[j])
-            deg_max = torch.max(degraded[j])
-            degraded[j] = (degraded[j] - deg_min) * (0.5 - (-0.5)) / (
-                deg_max - deg_min
-            ) - 0.5
-
-        grid = make_grid(xh, nrow=4)
-        grid1 = make_grid(original, nrow=4)
-        grid2 = make_grid(degraded, nrow=4)
-        grid3 = make_grid(direct, nrow=4)
-
         # Evaluate the model using FID and Inception Score
         avg_losses.append(avg_loss)
         fid_temp = funcs.get_fid(dif_model, dataset, 16, accelerator.device)
@@ -163,7 +180,24 @@ for i in range(num_epochs):
 
         # fmt: off
         # Save samples to `./contents_custom` directory
-        if i % 5 == 0:
+        if i % 20 == 0:
+            original, degraded, direct, xh = dif_model.sample(
+                16, dataset, (1, 28, 28), accelerator.device)
+            # Can get device explicitly with `accelerator.device`
+
+            # Normalize the degraded images for better visualization
+            for j in range(16):
+                deg_min = torch.min(degraded[j])
+                deg_max = torch.max(degraded[j])
+                degraded[j] = (degraded[j] - deg_min) * (0.5 - (-0.5)) / (
+                    deg_max - deg_min
+                ) - 0.5
+
+            # Save the images
+            grid = make_grid(xh, nrow=4)
+            grid1 = make_grid(original, nrow=4)
+            grid2 = make_grid(degraded, nrow=4)
+            grid3 = make_grid(direct, nrow=4)
             save_image(grid, f"./contents_custom/custom_sample_{i:04d}.png") # noqa E231
             save_image(grid1, f"./contents_custom/original_sample_{i:04d}.png") # noqa E231
             save_image(grid2, f"./contents_custom/degraded_sample_{i:04d}.png") # noqa E231
@@ -171,14 +205,12 @@ for i in range(num_epochs):
 
         # fmt: on
 
-        # save the model's weights and biases:
-
-        #
-        if i == 0 or i == 10:
+        # Save the model's weights and biases every 20 epochs
+        if i % 20 == 0:
             torch.save(
                 dif_model.state_dict(),
                 "./custom_mnist_"
-                + str(i + 1)
+                + str(i)
                 + "_"
                 + orientation
                 + "_"
@@ -186,6 +218,8 @@ for i in range(num_epochs):
                 + ".pth",
             )  # noqa F541
 
+
+# Save the final model, if it hasn't been saved already
 torch.save(
     dif_model.state_dict(),
     "./custom_mnist_"

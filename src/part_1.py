@@ -1,9 +1,25 @@
 """!@file part_1.py
 
 @brief This file contains the first part of the project.
+
 @details This file contains the first part of the project.
-The first part of the project is the implementation of the CNN module.
-This module is used to train the model and make predictions.
+The first part of the project is the implementation of the standard DDPM module.
+This code is used to train the model and make predictions,
+and to evaluate those using FID and Inception Score. There are 2 extra inputs,
+that define the number of epochs and the hyperparameters to be used.
+The code is run from the command line with the following command:
+
+python part_1.py num_epochs 'hyper_params'
+
+Available hyperparameters are:
+- 'default': Default hyperparameters, as defined in the coursework_starter notebook
+- 'light': Shallower CNN and less
+- 'more_capacity': Deeper CNN with more capacity
+- 'testing': A 2nd set of default hyperparameters for comparison
+
+The code saves the model and the generated images every 20 epochs,
+and plots the losses, FID and IS scores over the training process.
+The final FID and IS scores are also printed.
 
 @author Created by T.Breitburd on 23/03/2024
 """
@@ -29,7 +45,8 @@ import funcs
 # Ignore UserWarning from inception score metric
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# Get the number of epochs from the command line
+
+# Get the number of epochs and hyperparameters from the command line
 num_epochs = int(sys.argv[1])
 hyper_params = sys.argv[2]
 
@@ -37,11 +54,12 @@ hyper_params = sys.argv[2]
 torch.manual_seed(75016)
 np.random.seed(75016)
 
-# Content saving directory
+# Define a content saving directory
 project_dir = os.getcwd()
 content_dir = os.path.join(project_dir, "contents")
 if not os.path.exists(content_dir):
     os.makedirs(content_dir)
+
 
 # --------- Training the model ------------
 # Code from the coursework_starter notebook
@@ -55,9 +73,9 @@ if hyper_params == "default":
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
 elif hyper_params == "light":
-    # Shallower CNN and less degradation
+    # Shallower CNN
     betas = (1e-4, 0.02)
-    n_T = 100
+    n_T = 1000
     lr = 2e-4
     n_hidden = (16, 64, 16)
     batch_size = 128
@@ -76,6 +94,7 @@ elif hyper_params == "testing":
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
 
+
 # Perform some basic preprocessing on the data loader
 tf = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (1.0))])
 dataset = MNIST("./data", train=True, download=True, transform=tf)
@@ -83,10 +102,10 @@ dataloader = DataLoader(
     dataset, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=True
 )
 
-
 # Create our model with a given choice of hidden layers, activation function,
 # and learning rate
 gt = CNN(in_channels=1, expected_shape=(28, 28), n_hidden=n_hidden, act=nn.GELU)
+
 # For testing: (16, 32, 32, 16)
 # For more capacity (for example): (64, 128, 256, 128, 64)
 ddpm = DDPM(gt=gt, betas=betas, n_T=n_T)
@@ -110,7 +129,6 @@ with torch.no_grad():
 
 
 # We train the model for the chosen number epochs
-
 losses = []
 FID = []
 IS = []
@@ -129,6 +147,7 @@ for i in range(num_epochs):
         # ^Technically should be `accelerator.backward(loss)` but not necessary for local training
 
         losses.append(loss.item())
+
         # fmt: off
         avg_loss = np.average(losses[max(len(losses) - 100, 0):])
 
@@ -136,16 +155,13 @@ for i in range(num_epochs):
             f"loss: {avg_loss:.3g}" # noqa E231
         )  # Show running average of loss in progress bar
         # fmt: on
+
         optim.step()
 
     ddpm.eval()
-    with torch.no_grad():
-        degraded, xh = ddpm.sample(
-            16, (1, 28, 28), accelerator.device
-        )  # Can get device explicitly with `accelerator.device`
-        grid = make_grid(xh, nrow=4)
-        grid1 = make_grid(degraded, nrow=4)
 
+    # Now generate some samples and evaluate the model
+    with torch.no_grad():
         # Evaluate the model using FID and Inception Score
         avg_losses.append(avg_loss)
         fid_temp = funcs.get_fid(ddpm, dataset, 16, accelerator.device)
@@ -155,18 +171,24 @@ for i in range(num_epochs):
 
         # fmt: off
         # Save samples to `./contents` directory
-        if i % 5 == 0:
+        if i % 20 == 0:
+            degraded, xh = ddpm.sample(
+                                        16, (1, 28, 28), accelerator.device
+                                        )  # Can get device explicitly with `accelerator.device`
+            grid = make_grid(xh, nrow=4)
+            grid1 = make_grid(degraded, nrow=4)
             save_image(grid, f"./contents/ddpm_sample_{i:04d}.png") # noqa E231
             save_image(grid1, f"./contents/ddpm_degraded_{i:04d}.png") # noqa E231
         # fmt: on
 
-        # save model
-        if i % 10 == 0:
+        # Save the current model every 20 epochs
+        if i % 20 == 0:
             torch.save(
                 ddpm.state_dict(),
-                "./ddpm_mnist_" + str(i + 1) + "_" + hyper_params + ".pth",
+                "./ddpm_mnist_" + str(i) + "_" + hyper_params + ".pth",
             )  # noqa F541
 
+# Save the final model, if not already saved
 torch.save(
     ddpm.state_dict(),
     "./ddpm_mnist_" + str(num_epochs) + "_" + hyper_params + ".pth",
