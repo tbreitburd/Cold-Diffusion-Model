@@ -154,22 +154,23 @@ for i in range(num_epochs):
         # fmt: on
 
         # save model
-        if i == 0 or i == 10:
+        if i % 10 == 0:
             torch.save(
-                ddpm.state_dict(),
-                "./ddpm_mnist_" + str(num_epochs) + "_" + hyper_params + ".pth",
+                ddpm.state_dict(i),
+                "./ddpm_mnist_" + str(i) + "_" + hyper_params + ".pth",
             )  # noqa F541
 
-        torch.save(
-            ddpm.state_dict(),
-            "./ddpm_mnist_" + str(num_epochs) + "_" + hyper_params + ".pth",
-        )  # noqa F541
+torch.save(
+    ddpm.state_dict(),
+    "./ddpm_mnist_" + str(num_epochs) + "_" + hyper_params + ".pth",
+)  # noqa F541
 
 
 # Plot the losses, FID and IS scores over the training process
-funcs.plot_losses(losses, avg_losses, num_epochs, "DDPM_default")
-funcs.plot_fid(FID, num_epochs, "DDPM_default")
-funcs.plot_is(IS, num_epochs, "DDPM_default")
+string = "DDPM_" + hyper_params
+funcs.plot_losses(losses, avg_losses, num_epochs, string)
+funcs.plot_fid(FID, num_epochs, string)
+funcs.plot_is(IS, num_epochs, string)
 
 
 # Evaluate the full model using FID and Inception Score
