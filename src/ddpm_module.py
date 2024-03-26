@@ -70,6 +70,9 @@ class DDPM(nn.Module):
 
         _one = torch.ones(n_sample, device=device)
         z_t = torch.randn(n_sample, *size, device=device)
+
+        degraded = z_t.clone()
+
         for i in range(self.n_T, 0, -1):
             alpha_t = self.alpha_t[i]
             beta_t = self.beta_t[i]
@@ -85,4 +88,4 @@ class DDPM(nn.Module):
                 z_t += torch.sqrt(beta_t) * torch.randn_like(z_t)
             # (We don't add noise at the final step - i.e., the last line of the algorithm)
 
-        return z_t
+        return degraded, z_t
