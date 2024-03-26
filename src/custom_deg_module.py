@@ -31,6 +31,8 @@ def schedules(order: int, T: int, type: str) -> Dict[str, torch.Tensor]:
         # Unique random order
         index = random.sample(range(28), 28)
 
+    index = np.array(index)
+
     return {type: torch.tensor(index)}
 
 
@@ -60,6 +62,8 @@ def schedules_7(order: int, T: int, type: str) -> Dict[str, torch.Tensor]:
         # Unique random order
         idx = random.sample(range(7), 7)
         index = [idx_groups[i] for i in idx]
+
+    index = np.array(index)
 
     return {type: torch.tensor(index)}
 
