@@ -51,7 +51,7 @@ def get_fid(generator, real_data, num_images, device):
 
         # Make the image have 3 identical channels
         # so that it can be processed by the FID metric
-        real_img = real_img.to(torch.uint8).expand(-1, 3, -1, -1)
+        real_img = real_img.to(torch.uint8).repeat(1, 3, 1, 1)
 
         # Sample images from chosen diffusion model (DDPM)
         if generator.__class__.__name__ == "DDPM":
@@ -63,7 +63,7 @@ def get_fid(generator, real_data, num_images, device):
             )
 
         # Make the image have 3 identical channels
-        gen_img = gen_img.expand(-1, 3, -1, -1)
+        gen_img = gen_img.repeat(1, 3, 1, 1)
 
         # Put the images in the same device
         gen_img = gen_img.to(real_img.device)
@@ -97,14 +97,14 @@ def get_is(data_source, is_real, num_images, device):
             num_samples = len(data_source)
             idx = random.sample(range(num_samples), num_images)
             img = torch.stack([data_source[i][0].clone() for i in idx])
-            img = img.expand(-1, 3, -1, -1)
+            img = img.repeat(1, 3, 1, 1)
 
         else:
             # Sample images from the diffusion model (DDPM)
             _, img = data_source.sample(num_images, (1, 28, 28), device)
 
             # Make the image have 3 identical channels
-            img = img.expand(-1, 3, -1, -1)
+            img = img.repeat(1, 3, 1, 1)
 
             img = img.to("cpu")
 
@@ -138,7 +138,7 @@ def get_is_custom(generator, data_source, is_real, num_images, device):
             num_samples = len(data_source)
             idx = random.sample(range(num_samples), num_images)
             img = torch.stack([data_source[i][0].clone() for i in idx])
-            img = img.expand(-1, 3, -1, -1)
+            img = img.repeat(1, 3, 1, 1)
 
         else:
             # Sample images from the custom model
@@ -147,7 +147,7 @@ def get_is_custom(generator, data_source, is_real, num_images, device):
             )
 
             # Make the image have 3 identical channels
-            img = img.expand(-1, 3, -1, -1)
+            img = img.repeat(1, 3, 1, 1)
 
             img = img.to("cpu")
 
