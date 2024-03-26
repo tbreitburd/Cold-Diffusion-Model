@@ -155,11 +155,12 @@ for i in range(num_epochs):
         IS.append(is_temp)
 
         # fmt: off
-        # Save samples to `./contents` directory
-        save_image(grid, f"./contents_custom/custom_sample_{i:04d}.png") # noqa E231
-        save_image(grid1, f"./contents_custom/original_sample_{i:04d}.png") # noqa E231
-        save_image(grid2, f"./contents_custom/degraded_sample_{i:04d}.png") # noqa E231
-        save_image(grid3, f"./contents_custom/direct_sample_{i:04d}.png") # noqa E231
+        # Save samples to `./contents_custom` directory
+        if i % 5 == 0:
+            save_image(grid, f"./contents_custom/custom_sample_{i:04d}.png") # noqa E231
+            save_image(grid1, f"./contents_custom/original_sample_{i:04d}.png") # noqa E231
+            save_image(grid2, f"./contents_custom/degraded_sample_{i:04d}.png") # noqa E231
+            save_image(grid3, f"./contents_custom/direct_sample_{i:04d}.png") # noqa E231
 
         # fmt: on
 

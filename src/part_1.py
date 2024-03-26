@@ -148,8 +148,9 @@ for i in range(num_epochs):
 
         # fmt: off
         # Save samples to `./contents` directory
-        save_image(grid, f"./contents/ddpm_sample_{i:04d}.png") # noqa E231
-        save_image(grid1, f"./contents/ddpm_degraded_{i:04d}.png") # noqa E231
+        if i % 5 == 0:
+            save_image(grid, f"./contents/ddpm_sample_{i:04d}.png") # noqa E231
+            save_image(grid1, f"./contents/ddpm_degraded_{i:04d}.png") # noqa E231
         # fmt: on
 
         # save model
