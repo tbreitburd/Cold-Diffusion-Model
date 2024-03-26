@@ -163,7 +163,21 @@ for i in range(num_epochs):
 
         # fmt: on
 
-        # save model
+        # save the model's weights and biases:
+
+        #
+        if i == 0 or i == 10:
+            torch.save(
+                dif_model.state_dict(),
+                "./custom_mnist_"
+                + str(i)
+                + "_"
+                + orientation
+                + "_"
+                + hyper_params
+                + ".pth",
+            )  # noqa F541
+
         torch.save(
             dif_model.state_dict(),
             "./custom_mnist_"
