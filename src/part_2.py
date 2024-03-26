@@ -179,16 +179,16 @@ for i in range(num_epochs):
                 + ".pth",
             )  # noqa F541
 
-        torch.save(
-            dif_model.state_dict(),
-            "./custom_mnist_"
-            + str(num_epochs)
-            + "_"
-            + orientation
-            + "_"
-            + hyper_params
-            + ".pth",
-        )  # noqa F541
+torch.save(
+    dif_model.state_dict(),
+    "./custom_mnist_"
+    + str(num_epochs)
+    + "_"
+    + orientation
+    + "_"
+    + hyper_params
+    + ".pth",
+)  # noqa F541
 
 
 string = f"custom_{orientation}_{hyper_params}"
