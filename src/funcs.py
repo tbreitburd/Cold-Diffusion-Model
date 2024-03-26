@@ -13,6 +13,7 @@ import random
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from torchvision.utils import save_image, make_grid
 from torchmetrics.image.fid import FrechetInceptionDistance
 from torchmetrics.image.inception import InceptionScore
 
@@ -143,7 +144,7 @@ def plot_losses(losses, avg_losses, num_epochs, model):
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.yscale("log")  # Put the y-axis on a log scale
-    plt.title(f"Losses over {num_epochs} epochs")
+    plt.title(f"Losses over {num_epochs} epochs for {model}")
     plt.legend()
 
     # Save the plot
@@ -151,7 +152,9 @@ def plot_losses(losses, avg_losses, num_epochs, model):
     plot_dir = os.path.join(project_dir, "Plots")
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
-    plot_path = os.path.join(plot_dir, "losses_for_" + model + ".png")
+    plot_path = os.path.join(
+        plot_dir, "losses_for_" + model + "@" + num_epochs + ".png"
+    )
     plt.savefig(plot_path)
     plt.close()
 
@@ -171,14 +174,14 @@ def plot_fid(fid_scores, num_epochs, model):
     plt.plot(x, fid_scores, color="green")
     plt.xlabel("Epochs")
     plt.ylabel("FID")
-    plt.title("FID over epochs")
+    plt.title(f"FID over {num_epochs} epochs for {model}")
 
     # Save the plot
     project_dir = os.getcwd()
     plot_dir = os.path.join(project_dir, "Plots")
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
-    plot_path = os.path.join(plot_dir, "fid_for_" + model + ".png")
+    plot_path = os.path.join(plot_dir, "fid_for_" + model + "@" + num_epochs + ".png")
     plt.savefig(plot_path)
     plt.close()
 
@@ -198,13 +201,45 @@ def plot_is(is_scores, num_epochs, model):
     plt.plot(x, is_scores, color="green")
     plt.xlabel("Epochs")
     plt.ylabel("IS")
-    plt.title("IS over epochs")
+    plt.title(f"IS over {num_epochs} epochs for {model}")
 
     # Save the plot
     project_dir = os.getcwd()
     plot_dir = os.path.join(project_dir, "Plots")
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
-    plot_path = os.path.join(plot_dir, "incept_score_for_" + model + ".png")
+    plot_path = os.path.join(
+        plot_dir, "incept_score_for_" + model + "@" + num_epochs + ".png"
+    )
     plt.savefig(plot_path)
     plt.close()
+
+
+def plot_ddpm_degrade(mnist, timestep, beta, n_T):
+    # Load an image from the mnist dataset:
+    idx = random.sample(range(len(mnist)), 16)
+    z_t = torch.stack([mnist[i][0].clone() for i in idx])
+
+    assert beta[0] < beta[1] < 1.0, "beta1 and beta2 must be in (0, 1)"
+
+    beta_t = (beta[1] - beta[0]) * torch.arange(
+        0, n_T + 1, dtype=torch.float32
+    ) / n_T + beta[0]
+    alpha_t = torch.exp(
+        torch.cumsum(torch.log(1 - beta_t), dim=0)
+    )  # Cumprod in log-space (better precision)
+
+    eps = torch.randn_like(z_t)  # eps ~ N(0, 1)
+    alpha_t = alpha_t[timestep, None, None, None]
+
+    z_t = torch.sqrt(alpha_t) * z_t + torch.sqrt(1 - alpha_t) * eps
+
+    grid = make_grid(z_t, nrow=4)
+
+    project_dir = os.getcwd()
+    plot_dir = os.path.join(project_dir, "Plots")
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    plot_path = os.path.join(plot_dir, f"ddpm_degraded_sample_{timestep}.png")
+
+    save_image(grid, plot_path)  # noqa E231
