@@ -77,7 +77,7 @@ if hyper_params == "default_7":
     order = 3
     grouping = "7"
     n_T = 7
-    lr = 2e-4
+    lr = 2e-5
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
 elif hyper_params == "default_28":
@@ -85,7 +85,7 @@ elif hyper_params == "default_28":
     order = 3
     grouping = "28"
     n_T = 28
-    lr = 2e-4
+    lr = 2e-5
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
 elif hyper_params == "more_capacity":
@@ -94,7 +94,7 @@ elif hyper_params == "more_capacity":
     grouping = "7"
     betas = (1e-4, 0.02)
     n_T = 1000
-    lr = 2e-4
+    lr = 2e-5
     n_hidden = (64, 128, 256, 128, 64)
     batch_size = 128
 
