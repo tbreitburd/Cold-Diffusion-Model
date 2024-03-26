@@ -17,6 +17,10 @@ from torchvision.utils import save_image, make_grid
 from torchmetrics.image.fid import FrechetInceptionDistance
 from torchmetrics.image.inception import InceptionScore
 
+# Set random seeds
+torch.manual_seed(75016)
+np.random.seed(75016)
+
 
 def get_fid(generator, real_data, num_images, device):
     with torch.no_grad():
@@ -153,7 +157,7 @@ def plot_losses(losses, avg_losses, num_epochs, model):
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     plot_path = os.path.join(
-        plot_dir, "losses_for_" + model + "@" + num_epochs + ".png"
+        plot_dir, "losses_for_" + model + "@" + str(num_epochs) + ".png"
     )
     plt.savefig(plot_path)
     plt.close()
@@ -181,7 +185,9 @@ def plot_fid(fid_scores, num_epochs, model):
     plot_dir = os.path.join(project_dir, "Plots")
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
-    plot_path = os.path.join(plot_dir, "fid_for_" + model + "@" + num_epochs + ".png")
+    plot_path = os.path.join(
+        plot_dir, "fid_for_" + model + "@" + str(num_epochs) + ".png"
+    )
     plt.savefig(plot_path)
     plt.close()
 
@@ -209,7 +215,7 @@ def plot_is(is_scores, num_epochs, model):
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     plot_path = os.path.join(
-        plot_dir, "incept_score_for_" + model + "@" + num_epochs + ".png"
+        plot_dir, "incept_score_for_" + model + "@" + str(num_epochs) + ".png"
     )
     plt.savefig(plot_path)
     plt.close()
