@@ -4,6 +4,27 @@
 
 @details This file contains a training ground for the different diffusion models.
 The code is used to train the model and save the model states.
+The code is run from the command line with the following command:
+
+python training_grounds.py num_epochs 'hyper_params' 'custom_deg' 'orientation'
+
+Available hyperparameters are:
+- 'default': Default hyperparameters, as defined in the coursework_starter notebook
+- 'light': Shallower CNN and less
+- 'more_capacity': Deeper CNN with more capacity
+- 'testing': A 2nd set of default hyperparameters for comparison
+Then for the custom degradation:
+- 'default_7': Default hyperparameters with grouping 7
+- 'default_28': Default hyperparameters with grouping 28
+- 'more_capacity': More capacity
+- 'testing': A 2nd set of default hyperparameters for comparison
+
+
+Custom degradation can be set to True or False. If True, the model will use the custom
+degradation module. If False, the model will use the standard DDPM module.
+
+Orientation can be set to 'row' or 'col'. This will determine the orientation of the
+degradation when using the custom degradation model.
 
 @author Created by T.Breitburd on 23/03/2024
 """
