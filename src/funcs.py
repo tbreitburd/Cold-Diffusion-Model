@@ -35,7 +35,7 @@ def get_fid(generator, real_data, num_images, device):
 
         # Sample images from the generator (DDPM)
         if generator.__class__.__name__ == "DDPM":
-            gen_img = generator.sample(num_images, (1, 28, 28), device)
+            _, gen_img = generator.sample(num_images, (1, 28, 28), device)
         else:
             _, __, ___, gen_img = generator.sample(
                 num_images, real_data, (1, 28, 28), device
@@ -68,7 +68,7 @@ def get_is(data_source, is_real, num_images, device):
 
         else:
             # Sample images from the generator (DDPM)
-            img = data_source.sample(num_images, (1, 28, 28), device)
+            _, img = data_source.sample(num_images, (1, 28, 28), device)
 
             # Make the image have 3 identical channels
             img = img.expand(-1, 3, -1, -1)
