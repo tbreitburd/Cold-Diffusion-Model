@@ -11,6 +11,7 @@ This module is used to train the model and make predictions.
 
 # Importing the necessary libraries
 import sys
+import os
 import warnings
 import numpy as np
 import torch
@@ -38,6 +39,16 @@ orientation = sys.argv[4]
 # Set random seeds
 torch.manual_seed(75016)
 np.random.seed(75016)
+
+
+# Content saving directory
+project_dir = os.getcwd()
+content_dir = os.path.join(project_dir, "contents")
+content_custom_dir = os.path.join(project_dir, "contents_custom")
+if not os.path.exists(content_dir):
+    os.makedirs(content_dir)
+if not os.path.exists(content_custom_dir):
+    os.makedirs(content_custom_dir)
 
 # --------- Training the model ------------
 # Code from the coursework_starter notebook
@@ -179,13 +190,13 @@ for i in range(num_epochs):
         if custom_deg == "True":
             torch.save(
                 dif_model.state_dict(),
-                "./ddpm_mnist_" + str(i) + "_" + hyper_params + ".pth",
+                "./ddpm_mnist_" + str(i + 1) + "_" + hyper_params + ".pth",
             )  # noqa F541
         else:
             torch.save(
                 dif_model.state_dict(),
                 "./custom_mnist_"
-                + str(i)
+                + str(i + 1)
                 + "_"
                 + orientation
                 + "_"

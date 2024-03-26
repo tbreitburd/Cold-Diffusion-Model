@@ -1,4 +1,5 @@
 import sys
+import os
 import warnings
 import numpy as np
 import torch
@@ -26,6 +27,12 @@ orientation = sys.argv[3]
 # Set random seeds
 torch.manual_seed(75016)
 np.random.seed(75016)
+
+# Content saving directory
+project_dir = os.getcwd()
+content_dir = os.path.join(project_dir, "contents_custom")
+if not os.path.exists(content_dir):
+    os.makedirs(content_dir)
 
 # ------------- Training the model ---------------
 # Code partly from the coursework_starter notebook
@@ -171,7 +178,7 @@ for i in range(num_epochs):
             torch.save(
                 dif_model.state_dict(),
                 "./custom_mnist_"
-                + str(i)
+                + str(i + 1)
                 + "_"
                 + orientation
                 + "_"
