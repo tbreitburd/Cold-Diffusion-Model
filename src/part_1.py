@@ -97,6 +97,19 @@ elif hyper_params == "testing":
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
     activation = nn.SELU
+elif hyper_params == "testing2":
+    # Testing 2
+    betas = (1e-4, 0.02)
+    n_T = 1500
+    lr = 4e-4
+    n_hidden = (16, 32, 32, 16)
+    batch_size = 128
+    activation = nn.GELU
+else:
+    raise ValueError(
+        "Invalid hyperparameters, please choose from: \n"
+        + "'default', 'light', 'more_capacity', 'testing' or 'testing2'"
+    )
 
 # Perform some basic preprocessing on the data loader
 tf = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (1.0))])
@@ -172,9 +185,15 @@ for i in range(num_epochs):
         FID.append(fid_temp)
         IS.append(is_temp)
 
+        if i % 10 == 0:
+            string = "DDPM_" + hyper_params
+            funcs.plot_losses(losses, avg_losses, i + 1, string)
+            funcs.plot_fid(FID, i + 1, string)
+            funcs.plot_is(IS, i + 1, string)
+
         # fmt: off
         # Save samples to `./contents` directory
-        if i % 20 == 0:
+        if i % 5 == 0:
             degraded, xh = ddpm.sample(
                                         16, (1, 28, 28), accelerator.device
                                         )  # Can get device explicitly with `accelerator.device`
@@ -185,7 +204,7 @@ for i in range(num_epochs):
         # fmt: on
 
         # Save the current model every 20 epochs
-        if i % 20 == 0:
+        if i % 10 == 0:
             torch.save(
                 ddpm.state_dict(),
                 "./ddpm_mnist_" + str(i) + "_" + hyper_params + ".pth",
@@ -226,8 +245,8 @@ with torch.no_grad():
 
     IS_end = funcs.get_is(ddpm, False, 100, accelerator.device)
 
-    print(f"IS of generated images after full training: {IS_end[0]} +-", IS_end[1])
+    print(f"IS of generated images after full training: {IS_end[0]} +- {IS_end[1]}")
 
     IS_real_end = funcs.get_is(dataset, True, 100, accelerator.device)
 
-    print(f"IS of real images: {IS_real_end[0]} +-", IS_real_end[1])
+    print(f"IS of real images: {IS_real_end[0]} +- {IS_real_end[1]}")
