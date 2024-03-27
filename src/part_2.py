@@ -93,11 +93,15 @@ elif hyper_params == "more_capacity":
     order = 3
     grouping = "7"
     betas = (1e-4, 0.02)
-    n_T = 1000
+    n_T = 7
     lr = 2e-4
     n_hidden = (64, 128, 256, 128, 64)
     batch_size = 128
-
+else:
+    raise ValueError(
+        "Invalid hyperparameters, please choose from: \n"
+        + "'default_7','default_28','more_capacity'"
+    )
 
 # Perform some basic preprocessing on the data loader
 tf = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (1.0))])
@@ -180,7 +184,14 @@ for i in range(num_epochs):
 
         # fmt: off
         # Save samples to `./contents_custom` directory
-        if i % 20 == 0:
+        if i % 10 == 0:
+            string = f"custom_{orientation}_{hyper_params}"
+            # Plot the losses, FID and IS scores over the training process
+            funcs.plot_losses(losses, avg_losses, i+1, string)
+            funcs.plot_fid(FID, i+1, string)
+            funcs.plot_is(IS, i+1, string)
+
+        if i % 5 == 0:
             original, degraded, direct, xh = dif_model.sample(
                 16, dataset, (1, 28, 28), accelerator.device)
             # Can get device explicitly with `accelerator.device`
@@ -206,7 +217,7 @@ for i in range(num_epochs):
         # fmt: on
 
         # Save the model's weights and biases every 20 epochs
-        if i % 20 == 0:
+        if i % 10 == 0:
             torch.save(
                 dif_model.state_dict(),
                 "./custom_mnist_"
