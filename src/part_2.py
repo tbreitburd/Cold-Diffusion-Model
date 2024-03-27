@@ -77,7 +77,7 @@ if hyper_params == "default_7":
     order = 3
     grouping = "7"
     n_T = 7
-    lr = 2e-5
+    lr = 2e-4
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
 elif hyper_params == "default_28":
@@ -85,7 +85,7 @@ elif hyper_params == "default_28":
     order = 3
     grouping = "28"
     n_T = 28
-    lr = 2e-5
+    lr = 2e-4
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
 elif hyper_params == "more_capacity":
@@ -94,7 +94,7 @@ elif hyper_params == "more_capacity":
     grouping = "7"
     betas = (1e-4, 0.02)
     n_T = 1000
-    lr = 2e-5
+    lr = 2e-4
     n_hidden = (64, 128, 256, 128, 64)
     batch_size = 128
 
@@ -198,10 +198,10 @@ for i in range(num_epochs):
             grid1 = make_grid(original, nrow=4)
             grid2 = make_grid(degraded, nrow=4)
             grid3 = make_grid(direct, nrow=4)
-            save_image(grid, f"./contents_custom/custom_sample_{i:04d}.png") # noqa E231
-            save_image(grid1, f"./contents_custom/original_sample_{i:04d}.png") # noqa E231
-            save_image(grid2, f"./contents_custom/degraded_sample_{i:04d}.png") # noqa E231
-            save_image(grid3, f"./contents_custom/direct_sample_{i:04d}.png") # noqa E231
+            save_image(grid, f"./contents_custom/custom_sample_{i:04d}_{hyper_params}.png") # noqa E231
+            save_image(grid1, f"./contents_custom/original_sample_{i:04d}_{hyper_params}.png") # noqa E231
+            save_image(grid2, f"./contents_custom/degraded_sample_{i:04d}_{hyper_params}.png") # noqa E231
+            save_image(grid3, f"./contents_custom/direct_sample_{i:04d}_{hyper_params}.png") # noqa E231
 
         # fmt: on
 
@@ -219,36 +219,70 @@ for i in range(num_epochs):
             )  # noqa F541
 
 
-# Save the final model, if it hasn't been saved already
-torch.save(
-    dif_model.state_dict(),
-    "./custom_mnist_"
-    + str(num_epochs)
-    + "_"
-    + orientation
-    + "_"
-    + hyper_params
-    + ".pth",
-)  # noqa F541
+with torch.no_grad():
+    original, degraded, direct, xh = dif_model.sample(
+        16, dataset, (1, 28, 28), accelerator.device
+    )
+    # Can get device explicitly with `accelerator.device`
 
+    # Normalize the degraded images for better visualization
+    for j in range(16):
+        deg_min = torch.min(degraded[j])
+        deg_max = torch.max(degraded[j])
+        degraded[j] = (degraded[j] - deg_min) * (0.5 - (-0.5)) / (
+            deg_max - deg_min
+        ) - 0.5
 
-string = f"custom_{orientation}_{hyper_params}"
-# Plot the losses, FID and IS scores over the training process
-funcs.plot_losses(losses, avg_losses, num_epochs, string)
-funcs.plot_fid(FID, num_epochs, string)
-funcs.plot_is(IS, num_epochs, string)
+    # Save the images
+    grid = make_grid(xh, nrow=4)
+    grid1 = make_grid(original, nrow=4)
+    grid2 = make_grid(degraded, nrow=4)
+    grid3 = make_grid(direct, nrow=4)
+    save_image(
+        grid,
+        f"./contents_custom/custom_sample_{num_epochs:04d}_{hyper_params}.png",  # noqa E231
+    )
+    save_image(
+        grid1,
+        f"./contents_custom/original_sample_{num_epochs:04d}_{hyper_params}.png",  # noqa E231
+    )
+    save_image(
+        grid2,
+        f"./contents_custom/degraded_sample_{num_epochs:04d}_{hyper_params}.png",  # noqa E231
+    )
+    save_image(
+        grid3,
+        f"./contents_custom/direct_sample_{num_epochs:04d}_{hyper_params}.png",  # noqa E231
+    )
 
+    # Save the final model, if it hasn't been saved already
+    torch.save(
+        dif_model.state_dict(),
+        "./custom_mnist_"
+        + str(num_epochs)
+        + "_"
+        + orientation
+        + "_"
+        + hyper_params
+        + ".pth",
+    )  # noqa F541
 
-# Evaluate the full model using FID and Inception Score
+    string = f"custom_{orientation}_{hyper_params}"
+    # Plot the losses, FID and IS scores over the training process
+    funcs.plot_losses(losses, avg_losses, num_epochs, string)
+    funcs.plot_fid(FID, num_epochs, string)
+    funcs.plot_is(IS, num_epochs, string)
 
-FID_end = funcs.get_fid(dif_model, dataset, 100, accelerator.device)
+    # Evaluate the full model using FID and Inception Score
 
-print(f"FID after full training: {FID_end}")
+    FID_end = funcs.get_fid(dif_model, dataset, 100, accelerator.device)
 
-IS_end = funcs.get_is_custom(dif_model, dataset, False, 100, accelerator.device)
+    print(f"FID after full training: {FID_end}")
 
-print(f"IS of generated images after full training: {IS_end[0]} +-", IS_end[1])
+    IS_end = funcs.get_is_custom(dif_model, dataset, False, 100, accelerator.device)
 
-IS_real_end = funcs.get_is_custom(dif_model, dataset, True, 100, accelerator.device)
+    print(f"IS of generated images after full training: {IS_end[0]} +-", IS_end[1])
 
-print(f"IS of real images: {IS_real_end[0]} +-", IS_real_end[1])
+    IS_real_end = funcs.get_is_custom(dif_model, dataset, True, 100, accelerator.device)
+
+    print(f"IS of real images: {IS_real_end[0]} +-", IS_real_end[1])

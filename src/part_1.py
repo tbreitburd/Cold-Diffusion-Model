@@ -72,6 +72,7 @@ if hyper_params == "default":
     lr = 2e-4
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
+    activation = nn.GELU
 elif hyper_params == "light":
     # Shallower CNN
     betas = (1e-4, 0.02)
@@ -79,6 +80,7 @@ elif hyper_params == "light":
     lr = 2e-4
     n_hidden = (16, 64, 16)
     batch_size = 128
+    activation = nn.GELU
 elif hyper_params == "more_capacity":
     # More capacity
     betas = (1e-4, 0.02)
@@ -86,14 +88,15 @@ elif hyper_params == "more_capacity":
     lr = 2e-4
     n_hidden = (64, 128, 256, 128, 64)
     batch_size = 128
+    activation = nn.GELU
 elif hyper_params == "testing":
     # Testing
     betas = (1e-4, 0.02)
-    n_T = 1000
-    lr = 2e-4
+    n_T = 100
+    lr = 6e-4
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
-
+    activation = nn.SELU
 
 # Perform some basic preprocessing on the data loader
 tf = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (1.0))])
@@ -104,7 +107,7 @@ dataloader = DataLoader(
 
 # Create our model with a given choice of hidden layers, activation function,
 # and learning rate
-gt = CNN(in_channels=1, expected_shape=(28, 28), n_hidden=n_hidden, act=nn.GELU)
+gt = CNN(in_channels=1, expected_shape=(28, 28), n_hidden=n_hidden, act=activation)
 
 # For testing: (16, 32, 32, 16)
 # For more capacity (for example): (64, 128, 256, 128, 64)
@@ -177,8 +180,8 @@ for i in range(num_epochs):
                                         )  # Can get device explicitly with `accelerator.device`
             grid = make_grid(xh, nrow=4)
             grid1 = make_grid(degraded, nrow=4)
-            save_image(grid, f"./contents/ddpm_sample_{i:04d}.png") # noqa E231
-            save_image(grid1, f"./contents/ddpm_degraded_{i:04d}.png") # noqa E231
+            save_image(grid, f"./contents/ddpm_sample_{i:04d}_{hyper_params}.png") # noqa E231
+            save_image(grid1, f"./contents/ddpm_degraded_{i:04d}_{hyper_params}.png") # noqa E231
         # fmt: on
 
         # Save the current model every 20 epochs
@@ -188,30 +191,43 @@ for i in range(num_epochs):
                 "./ddpm_mnist_" + str(i) + "_" + hyper_params + ".pth",
             )  # noqa F541
 
-# Save the final model, if not already saved
-torch.save(
-    ddpm.state_dict(),
-    "./ddpm_mnist_" + str(num_epochs) + "_" + hyper_params + ".pth",
-)  # noqa F541
 
+with torch.no_grad():
+    degraded, xh = ddpm.sample(
+        16, (1, 28, 28), accelerator.device
+    )  # Can get device explicitly with `accelerator.device`
+    grid = make_grid(xh, nrow=4)
+    grid1 = make_grid(degraded, nrow=4)
+    save_image(
+        grid, f"./contents/ddpm_sample_{num_epochs:04d}_{hyper_params}.png"  # noqa E231
+    )
+    save_image(
+        grid1,
+        f"./contents/ddpm_degraded_{num_epochs:04d}_{hyper_params}.png",  # noqa E231
+    )
 
-# Plot the losses, FID and IS scores over the training process
-string = "DDPM_" + hyper_params
-funcs.plot_losses(losses, avg_losses, num_epochs, string)
-funcs.plot_fid(FID, num_epochs, string)
-funcs.plot_is(IS, num_epochs, string)
+    # Save the final model, if not already saved
+    torch.save(
+        ddpm.state_dict(),
+        "./ddpm_mnist_" + str(num_epochs) + "_" + hyper_params + ".pth",
+    )  # noqa F541
 
+    # Plot the losses, FID and IS scores over the training process
+    string = "DDPM_" + hyper_params
+    funcs.plot_losses(losses, avg_losses, num_epochs, string)
+    funcs.plot_fid(FID, num_epochs, string)
+    funcs.plot_is(IS, num_epochs, string)
 
-# Evaluate the full model using FID and Inception Score
+    # Evaluate the full model using FID and Inception Score
 
-FID_end = funcs.get_fid(ddpm, dataset, 100, accelerator.device)
+    FID_end = funcs.get_fid(ddpm, dataset, 100, accelerator.device)
 
-print(f"FID after full training: {FID_end}")
+    print(f"FID after full training: {FID_end}")
 
-IS_end = funcs.get_is(ddpm, False, 100, accelerator.device)
+    IS_end = funcs.get_is(ddpm, False, 100, accelerator.device)
 
-print(f"IS of generated images after full training: {IS_end[0]} +-", IS_end[1])
+    print(f"IS of generated images after full training: {IS_end[0]} +-", IS_end[1])
 
-IS_real_end = funcs.get_is(dataset, True, 100, accelerator.device)
+    IS_real_end = funcs.get_is(dataset, True, 100, accelerator.device)
 
-print(f"IS of real images: {IS_real_end[0]} +-", IS_real_end[1])
+    print(f"IS of real images: {IS_real_end[0]} +-", IS_real_end[1])
