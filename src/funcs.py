@@ -51,7 +51,7 @@ def get_fid(generator, real_data, num_images, device):
 
         # Make the image have 3 identical channels
         # so that it can be processed by the FID metric
-        real_img = real_img.to(torch.uint8).repeat(1, 3, 1, 1)
+        real_img = real_img.repeat(1, 3, 1, 1)
 
         # Sample images from chosen diffusion model (DDPM)
         if generator.__class__.__name__ == "DDPM":
@@ -197,7 +197,7 @@ def plot_losses(losses, avg_losses, num_epochs, model):
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.yscale("log")  # Put the y-axis on a log scale
-    plt.title(f"Losses over {num_epochs} epochs for {model}")
+    plt.title(f"Losses over epochs for {model}")
     plt.legend()
 
     # Save the plot
@@ -205,9 +205,7 @@ def plot_losses(losses, avg_losses, num_epochs, model):
     plot_dir = os.path.join(project_dir, "Plots")
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
-    plot_path = os.path.join(
-        plot_dir, "losses_for_" + model + "@" + str(num_epochs) + ".png"
-    )
+    plot_path = os.path.join(plot_dir, "losses_for_" + model + ".png")
     plt.savefig(plot_path)
     plt.close()
 
@@ -231,16 +229,14 @@ def plot_fid(fid_scores, num_epochs, model):
     plt.plot(x, fid_scores, color="green")
     plt.xlabel("Epochs")
     plt.ylabel("FID")
-    plt.title(f"FID over {num_epochs} epochs for {model}")
+    plt.title(f"FID over epochs for {model}")
 
     # Save the plot
     project_dir = os.getcwd()
     plot_dir = os.path.join(project_dir, "Plots")
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
-    plot_path = os.path.join(
-        plot_dir, "fid_for_" + model + "@" + str(num_epochs) + ".png"
-    )
+    plot_path = os.path.join(plot_dir, "fid_for_" + model + ".png")
     plt.savefig(plot_path)
     plt.close()
 
@@ -264,16 +260,14 @@ def plot_is(is_scores, num_epochs, model):
     plt.plot(x, is_scores, color="green")
     plt.xlabel("Epochs")
     plt.ylabel("IS")
-    plt.title(f"IS over {num_epochs} epochs for {model}")
+    plt.title(f"IS over epochs for {model}")
 
     # Save the plot
     project_dir = os.getcwd()
     plot_dir = os.path.join(project_dir, "Plots")
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
-    plot_path = os.path.join(
-        plot_dir, "incept_score_for_" + model + "@" + str(num_epochs) + ".png"
-    )
+    plot_path = os.path.join(plot_dir, "incept_score_for_" + model + ".png")
     plt.savefig(plot_path)
     plt.close()
 
