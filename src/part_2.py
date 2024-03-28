@@ -209,10 +209,10 @@ for i in range(num_epochs):
             grid1 = make_grid(original, nrow=4)
             grid2 = make_grid(degraded, nrow=4)
             grid3 = make_grid(direct, nrow=4)
-            save_image(grid, f"./contents_custom/custom_sample_{i:04d}_{hyper_params}.png") # noqa E231
-            save_image(grid1, f"./contents_custom/original_sample_{i:04d}_{hyper_params}.png") # noqa E231
-            save_image(grid2, f"./contents_custom/degraded_sample_{i:04d}_{hyper_params}.png") # noqa E231
-            save_image(grid3, f"./contents_custom/direct_sample_{i:04d}_{hyper_params}.png") # noqa E231
+            save_image(grid, f"./contents_custom/custom_sample_{i:04d}_{orientation}_{hyper_params}.png") # noqa E231
+            save_image(grid1, f"./contents_custom/original_sample_{i:04d}_{orientation}_{hyper_params}.png") # noqa E231
+            save_image(grid2, f"./contents_custom/degraded_sample_{i:04d}_{orientation}_{hyper_params}.png") # noqa E231
+            save_image(grid3, f"./contents_custom/direct_sample_{i:04d}_{orientation}_{hyper_params}.png") # noqa E231
 
         # fmt: on
 
@@ -251,19 +251,19 @@ with torch.no_grad():
     grid3 = make_grid(direct, nrow=4)
     save_image(
         grid,
-        f"./contents_custom/custom_sample_{num_epochs:04d}_{hyper_params}.png",  # noqa E231
+        f"./contents_custom/custom_sample_{num_epochs:04d}_{orientation}_{hyper_params}.png",  # noqa E231
     )
     save_image(
         grid1,
-        f"./contents_custom/original_sample_{num_epochs:04d}_{hyper_params}.png",  # noqa E231
+        f"./contents_custom/original_sample_{num_epochs:04d}_{orientation}_{hyper_params}.png",  # noqa E231
     )
     save_image(
         grid2,
-        f"./contents_custom/degraded_sample_{num_epochs:04d}_{hyper_params}.png",  # noqa E231
+        f"./contents_custom/degraded_sample_{num_epochs:04d}_{orientation}_{hyper_params}.png",  # noqa E231
     )
     save_image(
         grid3,
-        f"./contents_custom/direct_sample_{num_epochs:04d}_{hyper_params}.png",  # noqa E231
+        f"./contents_custom/direct_sample_{num_epochs:04d}_{orientation}_{hyper_params}.png",  # noqa E231
     )
 
     # Save the final model, if it hasn't been saved already
