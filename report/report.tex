@@ -153,11 +153,11 @@
 
 \subsection{Diffusion Models}
 
-Diffusion models are a class of probabilistic latent variable models. They consist of an encoder and decoder. The encoder takes the input data and maps it to a latent space in a series of steps, resulting in a series of intermediate latent vairables. The encoder is similar to variational autoencoders (VAEs) in that it maps the input data to a latent space. However, the particularity of the encoder here is that the mappings it will apply at each time step are predetermnied. The key part is the decoder which is trained to learn what is the reverse process of the encoder, therefore being then able to produce samples\cite[p.348]{prince2023understanding}.
+Diffusion models are a class of probabilistic latent variable models. They consist of an encoder and decoder. The encoder takes the input data and maps it to a latent space in a series of steps, resulting in a series of intermediate latent variables. The encoder is similar to variational autoencoders (VAEs) in that it maps the input data to a latent space. However, the particularity of the encoder here is that the mappings it will apply at each time step are predetermined by a schedule. The key part is that the decoder is trained to learn what is the reverse process of the encoder, predicting back through the series of latent mappings, therefore being able to reproduce the original sample\cite[p.348]{prince2023understanding}.
 
 \subsection{Denoising Diffusion Probabilistic Model (DDPM)}
 
-In this report, the writing conventions of the Prince textbook will be followed\cite{prince2023understanding}. The model used for this project is a DDPM. For this mode, the encoder takes in input data $\mathbf{x}$ and maps it to a latent space $\mathbf{z_{T}}$, of the same dimensionality as $\mathbf{x}$, in a series of steps: $\mathbf{z_{0}} \rightarrow \mathbf{z_{1}} \rightarrow \ldots \rightarrow \mathbf{z_{T}}$. This is defined by a Markov Chain that is known, which at each step adds Gaussian Noise following a Noise or Variance Schedule, $\beta_{1, \dots, T}$. As it is a Markov Chain, and a type of variational autoencoder, the encoder can be described by an approximate probability distribution $q$ such that\cite{ho2020denoising}:
+In this report, the writing conventions of the Prince textbook will be followed\cite{prince2023understanding}. The model used for this project is a DDPM. For this model, the encoder takes in some input data $\mathbf{x}$ and maps it to a latent space $\mathbf{z_{T}}$, of the same dimensionality as $\mathbf{x}$, in a series of steps: $\mathbf{z_{0}} \rightarrow \mathbf{z_{1}} \rightarrow \ldots \rightarrow \mathbf{z_{T}}$. This can be defined as a known Markov chain, which at each step adds Gaussian Noise following a Noise or Variance Schedule, $\beta_{1, \dots, T}$. As it is a Markov Chain, and a type of variational autoencoder, the encoder can be described by an approximate probability distribution $q$ such that\cite{ho2020denoising}:
 
 \begin{equation}
 q(\mathbf{z}_{1:T}|\mathbf{x}) = \prod{t=1}{T}q(\mathbf{z}_{t}|\mathbf{z}_{1:t-1}))
@@ -181,7 +181,7 @@ And it can be shown that after t steps, this gives:
   \mathbf{z}_{t} = \sqrt{\alpha_{t}}\mathbf{x} + \sqrt{1 - \alpha_{t}}\mathbf{\epsilon}
 \end{equation}
 
-where $\alpha_{t} = \prod_{s=1}^{t} 1 - \beta_{s}$ and $\mathbf{\epsilon} \sim \mathcal{N}(0, \mathbf{I})$, is a sample from a standard normal distribution, and therefore is the actual noise added. The decoder is trained to learn the reverse process of the encoder, or simply how to go from $\mathbf{z}_{T}$ to $\mathbf{z}_{T-1}$, continuing back through the latent variables to the input data $\mathbf{x}$. Coming back to the approximate probability distribution $q$, the decoder is trained to learn the reverse distributions $q(\mathbf{z}_{t-1}|\mathbf{z}_{t})$. Approximating them as normal distributions, they can be written:
+where $\alpha_{t} = \prod_{s=1}^{t} 1 - \beta_{s}$ and $\mathbf{\epsilon} \sim \mathcal{N}(0, \mathbf{I})$, is a sample from a standard normal distribution, and is the actual noise added. The decoder is trained to learn the reverse process of the encoder, or simply how to go from $\mathbf{z}_{T}$ to $\mathbf{z}_{T-1}$, continuing back through the latent variables to the input data $\mathbf{x}$. Coming back to the approximate probability distribution $q$, the decoder is trained to learn the reverse distributions $q(\mathbf{z}_{t-1}|\mathbf{z}_{t})$. Approximating them as normal distributions, they can be written:
 
 \begin{equation}
   Pr(\mathbf{z}_{t-1}|\mathbf{z}_{t}, \phi{t}) = \mathcal{N}_{z_{t-1}}(\mathbf{f}_{t}[\mathbf{z}_{t}, \phi_{t}], \sigma_{t}^{2}\mathbf{I})
@@ -190,24 +190,29 @@ where $\alpha_{t} = \prod_{s=1}^{t} 1 - \beta_{s}$ and $\mathbf{\epsilon} \sim \
 where $\mathbf{f}_{t}$ is a neural network that takes $\mathbf{z}_{t}$ as input and has parameters $\phi_{t}$, which here is just the timestep $t$. The reason why the model predicts the mean of the normal distribution with the variance being fixed to $\sigma_{t}^{2}\mathbf{I}$ is discussed in greater detail in the Ho et al. (2020) paper\cite{ho2020denoising}. The training algorithm can then be written as follows:
 
 \begin{definitionbox}{Training Algorithm for DDPM reverse process \cite{ho2020denoising}}
-  \begin{algorithmic}
+  \begin{algorithmic}[1]
     \State \textbf{Input:} Data $\mathbf{x}$
-    \State \textbf{Output:} $\mathbf{\mu_{t}} = \mathbf{f}_{t}[\mathbf{z}_{t},t]$
+    \State \textbf{Output:} $\mathbf{\mu_{t}} = \mathbf{f}_{t}[\mathbf{z}_{t},\phi_{t}]$
     \State \textbf{repeat}
       \For{$i \in \mathcal{B}$} \Comment{For each training example index in batch}
         \State $t \sim \mathcal{U}(1, \dots, T)$ \Comment{Sample a random time step}
         \State $\mathbf{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ \Comment{Sample noise}
-        \State $L = ||\mathbf{\epsilon} - \mathbf{\epsilon}_{\phi}(\sqrt{\alpha_{t}}\mathbf{x} + \sqrt{1 - \alpha_{t}}\mathbf{\epsilon}, t)||^{2}$ \Comment{Compute individual noise}
+        \State $L = ||\mathbf{\epsilon} - \mathbf{\epsilon}_{\phi}(\sqrt{\alpha_{t}}\mathbf{x} + \sqrt{1 - \alpha_{t}}\mathbf{\epsilon}, \phi_{t})||^{2}$ \Comment{Compute individual noise}
       \EndFor \Comment{Accumulate losses for batch and take gradient descent step}
     \State \textbf{until} convergence
   \end{algorithmic}
 \end{definitionbox}
 
-Predicting the noise in the algorithm instead of the mean is done by modifying the parameterization of $\mathbf{f}_{t}[\mathbf{z}_{t}, t]$ \cite{ho2020denoising}.
+One may notice that the algorithm is predicting the noise instead of the mean. This is a result of reparameterizing the network $\mathbf{f}_{t}[\mathbf{z}_{t}, \phi_{t}]$\cite{ho2020denoising}, replacing it with $\hat{\mathbf{\epsilon}} = \mathbf{g}_{t}[\mathbf{z}_{t}, \phi_{t}]$, such that\cite[pp.361-362]{prince2023understanding}:
+
+\begin{equation}
+  \mathbf{f}_{t}[\mathbf{z}_{t}, \phi_{t}] =  \frac{1}{\sqrt{1 - \beta_{1}}}\mathbf{z}_{t} + \frac{\beta_{t}}{\sqrt{1 - \alpha_{t}}\sqrt{1 - \beta_{t}}} \mathbf{g}_{t}[\mathbf{z}_{t}, \phi_{t}]
+\end{equation}
+
 
 \section{Training the Model on the MNIST Dataset}
 
-Here, the model chosen to learn prediction of the noise is a Convolutional Neural Network (CNN). It is set to have a kernel size of 7. CNN's are often used in image data processing \cite[p.161]{prince2023understanding}, partly since they provide a way to reduce the number of weights and biases, which becomes an issue quickly in images as they are high dimensional inputs. More importantly, image recognition or prediction requires more a knowledge of what patterns define certain objects, and this whatever the position on the image. And this is something a fully connected neural network struggles with since it does not have any notion of spatial relationships between pixels, and would need to learn what a certain object looks in every rotation/position possible. This is key in the case of the MNIST dataset where only 9 objects are considered but they are found to be extremely variable, as they are handwritten.
+Here, the model chosen to learn prediction of the noise is a Convolutional Neural Network (CNN). CNN's are often used in image data processing \cite[p.161]{prince2023understanding}, partly since they provide a way to reduce the number of weights and biases, which becomes an issue quickly in images as they are high dimensional inputs. More importantly, image recognition or prediction requires more of a knowledge of what patterns define certain objects, and this whatever the position on the image. And this is something a fully connected neural network struggles with since it does not have any notion of spatial relationships between pixels, and would need to learn what a certain object looks in every rotation/position possible. This is key in the case of the MNIST dataset where only 9 object types are considered but they are found to be very varied, as they are handwritten.
 
 The activation function used is GELU, which is a Gaussian Error Linear Unit, defined as:
 
@@ -215,70 +220,85 @@ The activation function used is GELU, which is a Gaussian Error Linear Unit, def
   \text{GELU}(x) = x\Phi(x) = x \cdot \frac{1}{2} + [1 + \text{erf} ( \frac{x}{\sqrt{2}} )]
 \end{equation}
 
-where $\Phi(x) = P(X \leq x), X \sim \mathcal{N}(0, 1)$. It was introduced in 2016 by Hendrycks and Gimpel \cite{hendrycks2016gelu}, and introduces a mix of non-deterministic masking of inputs though still depending on the input values (see Figure \ref{fig:gelu}).
+where $\Phi(x) = P(X \leq x), X \sim \mathcal{N}(0, 1)$. It was introduced in 2016 by Hendrycks and Gimpel\cite{hendrycks2016gelu}, and was found to provide better results in computer vision tasks among others(see Figure\ref{fig:gelu}).
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
   \includegraphics[width=0.8\textwidth]{../Plots/GeLU_example.png}
-  \caption{GELU activation function}
+  \captionsetup{font=footnotesize}
+  \caption{GELU activation function (blue) compared to ReLU (orange) and ELU (green)}
   \label{fig:gelu}
 \end{figure}
 
-The standard DDPM model was trained for 100 epochs on the MNIST dataset, with a batch size of 128. The model was trained using the Adam optimizer with a learning rate of $2 \times 10^{-4}$, and the loss function used was the mean squared error.
+The standard DDPM model was trained for 100 epochs on the MNIST dataset, with a batch size of 128. The model was trained using the Adam optimizer \cite{kingma2015adam} with a learning rate of $2 \times 10^{-4}$, and the loss function used was the mean squared error\cite{mse}.
 
-First, the loss at each iteration was obtained and plotted in Figure \ref{fig:loss}. As can be seen the loss does decrease over time, fast at first then much slower which is expected.
+First, the loss at each iteration was obtained and plotted in Figure \ref{fig:loss}. As can be seen the loss does decrease over time, fast at first then much slower which is expected as the CNN converges towards an MSE minimum.
 
-\begin{figure}[h]
+\newpage
+\begin{figure}[ht]
   \centering
   \includegraphics[width=0.8\textwidth]{../Plots/losses_for_DDPM_default@100.png}
-  \caption{Loss at each iteration of the training process, and the average loss over each epoch}
+  \captionsetup{font=footnotesize}
+  \caption{Loss as a function of epoch number (green), with the average loss for each epoch overlayed (dashed black)}
   \label{fig:loss}
 \end{figure}
 
-\newpage
-One issue that arises in the context of the MNIST dataset is that the MSE is susceptible to be very low even though the samples generated are not good. This is because the MSE is purely looking at the problem quantitatively. To get a qualitative sense of the samples generated, 16 samples were generated for different epochs using the samping algorithm described in the Prince textbook\cite[p. 363]{prince2023understanding}, by giving the model a pure Gaussian noise input and letting it gradually denoise it. The samples generated at epoch 1, 20, 40 and 60 are shown in Figure \ref{fig:ddpm_samples}.
 
-\begin{figure}[h]
+One issue that arises in the context of the MNIST dataset is that the MSE is susceptible to be very low even though the samples generated are not good. This is because the MSE is purely looking at the problem quantitatively. To get a qualitative sense of the samples generated, 16 samples were generated for different epochs using the sampling algorithm described in the Prince textbook\cite[p. 363]{prince2023understanding}, by giving the model a pure Gaussian noise input and letting it gradually denoise it, adding some small noise each iteration. The samples generated at epoch 1, 20, 40 and 60 are shown in Figure \ref{fig:ddpm_samples}.
+
+\begin{figure}[ht]
   \centering
   \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0001_default.png}
   \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0020_default.png}
   \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0040_default.png}
   \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0060_default.png}
+  \captionsetup{font=footnotesize}
   \caption{Samples generated by the DDPM model at epochs 1, 20, 40 and 60}
   \label{fig:ddpm_samples}
 \end{figure}
 
 \newpage
-As expected the samples generated at epoch 1 are very close to being just noise, though some samples show some patterns appearing. By epoch 20, the model is consistently generating symbols, with some ressembling numbers. And it then takes a longer time to get to a point where the samples are consistently numbers. This comes back to the discussion above, as the symbols still provide a low MSE, but are not good samples, and the model is purely based on MSE.
+As expected the samples generated at epoch 1 are very close to being just noise, though some samples show some patterns appearing. By epoch 20, the model is almost consistently generating symbols, with some ressembling numbers, like a 7 in cell (3,2). And it then takes a longer time to get to a point where the samples are consistently numbers. This comes back to the discussion above, since the symbols do result in a low MSE, and the gradient of the loss function is smaller, the model struggles to learn the last step of having the symbols be digits.
 
-To quantitatively evaluate the quality of the samples, the Fréchet Inception Distance (FID) score was used. The FID score measures how similar two sets of images are by comparing the feature representations of the images\cite{fid}. The lower the score the better. The FID score was calculated for the samples generated at each epoch, and the results are shown in Figure \ref{fig:fid_ddpm}. A more robust estimate is computed once all epochs are run, on a larger sample of generated images.
+\newpage
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.4\textwidth]{../contents/ddpm_sample_0090_default.png}
+  \captionsetup{font=footnotesize}
+  \caption{Samples generated by the DDPM model at epoch 90}
+  \label{fig:ddpm_samples2}
+\end{figure}
+
+At epoch 90, the symbols look more like digits, though there are still some meaningless symbols being generated (see Fig. \ref{fig:ddpm_samples2}). To quantitatively evaluate the quality of the samples, the Fréchet Inception Distance (FID) score was used. The FID score measures how similar two sets of images are by comparing the statistics of the computer vision feature representations of the images. The features are obtained using the inception v3 model, an image classification model\cite{fid}. The lower the score the better. The FID score was calculated for the samples generated at each epoch, and the results are shown in Figure \ref{fig:fid_ddpm}. A more robust estimate is computed once all epochs are run, on a larger sample of generated images.
 
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
   \includegraphics[width=0.8\textwidth]{../Plots/fid_for_DDPM_default.png}
+  \captionsetup{font=footnotesize}
   \caption{FID score at each epoch of the training process}
   \label{fig:fid_ddpm}
 \end{figure}
 
-As expected, the FID score decreases over time. However, these still show that the model is not generating good samples, as the FID score is still quite high. And even at the end of training for the last epoch, the FID score was ... .
+Fig. \ref{fig:fid_ddpm} shows the FID score decreasing over time, which would match our expectations based on Figs \ref{fig:loss}, \ref{fig:ddpm_samples}, and \ref{fig:ddpm_samples2}. The FID score at the final epoch was found to be 98.74.
 
-Comparing to figures obtained in the Ho et al. (2020) paper\cite{ho2020denoising}, or the Bansal et al. (2022) paper\cite{bansal2022cold}, it can be seen that the score obtained here indicates quite bad performance. However, it is important to note that the model was trained for only 100 epochs, with quite a shallow CNN. Further, the FID here was used regardless of the digit, which may be different to in the papers mentionned. The rationale here is that the FID score being based on the distribution of computer vision features\cite{fid}, it should still be able to capture the quality of the samples generated when using it for all digits together. Finally, it is not a perfectly objective metric so it will, mainly be used for comparison of the different models trained in this report. In that aspect, it will be a more robust metric.
+Comparing to values obtained in the Ho et al. (2020) paper\cite{ho2020denoising}, or the Bansal et al. (2022) paper\cite{bansal2022cold}, it can be seen that the score obtained here indicates quite bad performance. Moreover, Fig \ref{fig:fid_ddpm} shows that a lot more epochs are needed to reach these values, if the FID continues decreasing. However, it is important to note that the model was trained for only 100 epochs, with quite a shallow CNN. Further, the FID here was used regardless of the digit, which may be different to in the papers mentionned. The rationale here was that with the FID score being based on the \textbf{distribution} of computer vision features\cite{fid}, it should still be able to capture the quality of the samples generated when using it for all digits together. Finally, it is not a perfectly objective metric so it will, mainly be used for comparison of the different models trained in this report. In that aspect, it will be a more robust metric for analysis.
 
-Additionally, the Inception Score (IS) was calculated for the samples generated at each epoch. The IS is a metric that measures the quality of generated images, by looking at the diversity and quality of the generated images. More specifically, and in this context, it will measure the variety of images/digits generated, but also how much each image looks like a digit. The IS score has lowest value 1.0 and the larger it is, the better.
+Additionally, the Inception Score (IS) was calculated for the samples generated at each epoch. The IS is a metric that measures the quality of generated images, by looking at the diversity and quality of the generated images\cite{inception_score}. More specifically, and in this context, it will measure the variety of images/digits generated, but also how much each image looks like a digit. The IS score has lowest value 1.0 and the larger it is, the better\cite{inception_score_implementation}.
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
   \includegraphics[width=0.8\textwidth]{../Plots/incept_score_for_DDPM_default.png}
+  \captionsetup{font=footnotesize}
   \caption{IS score at each epoch of the training process for the DDPM model}
   \label{fig:is_ddpm}
 \end{figure}
 
-Figure \ref{fig:is_ddpm} shows the IS score at each epoch of the training process. And the final epoch score was found to be: . Here, the IS score decreases over the epochs, which is not what is expected. Once again, this result has to be considered with caution, as because of computing efficiency, it is computed with a small sample of generated images. The more important point is that this metric only compares the generated images to themselves, so it is only a measure of the diversity and quality of the generated images.
+Figure \ref{fig:is_ddpm} shows the IS score at each epoch of the training process. And the final epoch score was found to be: $1.38 \pm 0.12$. Here, the IS score decreases over the epochs, which is not what is expected. Once again, this result has to be considered with caution. For computing reasons, this was computed with a relatively small sample of generated images. The more important point is that this metric only compares the generated images to themselves, so it is only a measure of the diversity and quality of the generated images. For the first few epochs, it is possible the generated images satisfied the IS score conditions listed above, and resulted in a larger score than at the end.
 
 \section{Running the Model for Different Hyperparameters}
 
-For the previous trained mode, a set of hyperparameters were used (see Table \ref{tab:hyperparams}. The noise schedule $\beta$'s are set by a tuple, which sets the range of values that the noise can take. They are then defined as: $\beta_{t} = \frac{(\beta_{2}-\beta_{1}) \times t}{T + \beta_{1}} $, for $t = 0, \dots, T$. The number of timesteps is set to 1000, and the CNN was set to have 4 hidden layers with 16, 32, 32, and 16 hidden units respectively.
+For the previous trained model, the set of hyperparameters the model came with was used (see Table \ref{tab:hyperparams}).First, the noise schedule $\beta$'s are set by a tuple, which sets the range of values that the noise can take. They are then defined as: $\beta_{t} = \frac{(\beta_{2}-\beta_{1}) \times t}{T + \beta_{1}} $, for $t = 0, \dots, T$. Here, the tuple was set to ($10^{-4}$, $0.02$). The number of timesteps is set to 1000, and the CNN was set to have 4 hidden layers with 16, 32, 32, and 16 hidden units respectively.
 
 \begin{table}[h]
   \centering
@@ -294,6 +314,7 @@ For the previous trained mode, a set of hyperparameters were used (see Table \re
     Activation function & GELU \\
     \hline
   \end{tabular}
+  \captionsetup{font=footnotesize}
   \caption{Hyperparameters used for the training of the DDPM model}
   \label{tab:hyperparams}
 \end{table}
@@ -307,76 +328,80 @@ In this section, another set of hyperparameters is chosen and the DDPM model is 
     Hyperparameter & Value/Choice \\
     \hline
     $\beta$'s & ($10^{-4}$, $0.02$) \\
-    Number of timesteps & 100 \\
-    Learning Rate & $6 \times 10^{-4}$ \\
+    Number of timesteps & 1500 \\
+    Learning Rate & $4 \times 10^{-4}$ \\
     Number of hidden layers \& units & ($16$, $32$, $32$, $16$) \\
     Batch Size & 128 \\
-    Activation function & SELU \\
+    Activation function & GELU \\
     \hline
   \end{tabular}
-  \caption{New hyperparameters used for the training of the DDPM model}
+  \captionsetup{font=footnotesize}
+  \caption{New hyperparameters used for the training of the DDPM model (\texttt{'testing2'})}
   \label{tab:hyperparams2}
 \end{table}
 
-By making the number of timesteps smaller, the model will have a "steeper" learning curve, as it will have to learn to denoise the image in fewer steps. The learning rate is increased to $6 \times 10^{-4}$ to encourage the model to learn faster. Now, whether this learning will be in the right direction is another question, but the idea is to see if the model can do well with a harder set of hyperparameters. Finally, the activation function is changed to SELU, which is a Scaled Exponential Linear Unit, which resembles the GELU function but without the "dip" below 0 (see Figure \ref{fig:gelu}). Overall, these hyperparameters are chosen to see if the model can perform as well with a harder set of hyperparameters, or if more capacity is needed if the model is to learn well.
+By making the number of timesteps larger, the model will have a "shallower" learning curve, as it will have more steps in which to learn to denoise an image. The learning rate is increased to $4 \times 10^{-4}$, making the jumps the gradient descent takes in the Training Algorithm (Section 1.1.2) larger. This can help avoid falling into a local minimum of the loss function. This can result in the model jumping around the minimum instad of settling, but the idea here is to promote some variability in the model. Overall, these hyperparameters are chosen to see if the model can perform better with this set of hyperparameters, or if the answer is more to do with the model architecture (CNN size, \dots).
 
 Again, the model was trained for 100 epochs, and the loss at each iteration was obtained and plotted in Figure \ref{fig:loss2}.
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
-  \includegraphics[width=0.8\textwidth]{../Plots/losses_for_DDPM_testing.png}
-  \caption{Loss at each iteration of the training process, and the average loss over each epoch}
+  \includegraphics[width=0.8\textwidth]{../Plots/losses_for_DDPM_testing2.png}
+  \captionsetup{font=footnotesize}
+  \caption{Loss as a function of epoch number over the training process (green), with the average loss overlayed (dashed black)}
   \label{fig:loss2}
 \end{figure}
 
+A much faster decrease of the loss can be seen here (Fig \ref{fig:loss2}). Looking at the samples generated at epochs 1, 20, 40 and 60, shown in Figure \ref{fig:ddpm_samples3}, it is hard to tell if more coherent symbols are generated sooner than for the previous hyperparameter set. However, there seems to be more digit-looking symbols at epoch 40 (3,5,4,9, and a 7) and 60 (0,9's, 8, and a 2) than previously. At the latest epoch however, it may be a bad draw, but the samples are somewhat further from digits than at epoch 60 (Fig \ref{fig:ddpm_samples4}).
 
-The same decrease of the loss can be seen here though it plateau's a higher. Looking at the samples generated at epochs 1, 20, 40 and 60, shown in Figure \ref{fig:ddpm_samples2}, it can be seen that the model is generating symbols at the same times as in the previous model, but there is no improvement towards those symbols becoming digits. Even at the latest epoch, the samples are still far from looking like digits (Fig \ref{fig:ddpm_samples3}).
-
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
-  \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0000_testing.png}
-  \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0020_testing.png}
-  \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0040_testing.png}
-  \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0060_testing.png}
-  \caption{Samples generated by the DDPM model at epochs 1, 20, 40 and 60}
-  \label{fig:ddpm_samples2}
-\end{figure}
-
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.4\textwidth]{../contents/ddpm_sample_0080_testing.png}
-  \caption{Samples generated by the DDPM model at epoch 100}
+  \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0000_testing2.png}
+  \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0020_testing2.png}
+  \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0040_testing2.png}
+  \includegraphics[width=0.2\textwidth]{../contents/ddpm_sample_0060_testing2.png}
+  \captionsetup{font=footnotesize}
+  \caption{Samples generated by the DDPM model with \texttt{'testing2'} hyperparameters at epochs 1, 20, 40 and 60}
   \label{fig:ddpm_samples3}
 \end{figure}
 
-The FID score at each epoch is shown in Figure \ref{fig:fid_ddpm2}. The FID score decreases over time, though it does end up higher than the previous model. The final FID score was found to be ... . The IS score at each epoch is shown in Figure \ref{fig:is_ddpm2}, and the final IS score was found to be ... .
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
-  \includegraphics[width=0.8\textwidth]{../Plots/fid_for_DDPM_testing.png}
+  \includegraphics[width=0.4\textwidth]{../contents/ddpm_sample_0080_testing2.png}
+  \captionsetup{font=footnotesize}
+  \caption{Samples generated by the DDPM model with \texttt{'testing2'} hyperparameters at epoch 80}
+  \label{fig:ddpm_samples4}
+\end{figure}
+\newpage
+The FID score at each epoch is shown in Figure \ref{fig:fid_ddpm2}. The FID score does go down to lower values than for the default hyperparameter set, with the final FID score being 95.35, slightly lower. The IS score at each epoch is shown in Figure \ref{fig:is_ddpm2}, and the final IS score was found to be $1.5 \pm 0.13$. Again, we see an unexpected decrease for the first few epochs but the final score is higher than for the default hyperparameters, which does follow the trend of the observations made, which is that this model does perform better than the previous one.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../Plots/fid_for_DDPM_testing2.png}
+  \captionsetup{font=footnotesize}
   \caption{FID score at each epoch of the training process}
   \label{fig:fid_ddpm2}
 
-  \includegraphics[width=0.8\textwidth]{../Plots/incept_score_for_DDPM_testing.png}
+  \includegraphics[width=0.8\textwidth]{../Plots/incept_score_for_DDPM_testing2.png}
+  \captionsetup{font=footnotesize}
   \caption{IS score at each epoch of the training process for the DDPM model}
   \label{fig:is_ddpm2}
 \end{figure}
 
-One thing worth noting is that the FID shows consistency with the previous model run.
 
 
 
 \chapter{Custom Degradation Function}
 
-In Bansal et al. (2022, \cite{bansal2022cold}), a conceptual summary of degradation functions is given. Starting with image $\mathbf{x} \in \mathbb{R}$, the degradation of the image, or forward process of the encoder for the DDPM described in section 1.1.2, can be considered as follows: $\mathbf{x}_{t} = D(\mathbf{x}, t)$, where $D$ is the degradation operator and $t$ is the severity of the degradation. In other words, $D(\mathbf{x}, 0) = \mathbf{x}$. In Chapter 1, the $D$ operator consisted of adding Gaussian noise with variance described by the Variance/Noise Schedule $\beta_{1, \dots, T}$. In this chapter, a custom degradation function, or operator $D$, will be described and used to train the model on the MNIST dataset. The important part of the degradation function is that an inverse process, $R$, is required to invert $D$ and satisfies: $R(\mathbf{x}_t, t) \approx \mathbf{x}$, and $R(\mathbf{x}_t, 1) \approx \mathbf{x}_{t-1}$. The degradation function will be described in the next section. And as was discussed in Chapter 1, this is implemented through a neural network parameterized by $\phi$ and trained to minimize the loss $L = ||\mathbf{x} - R_{\phi}(D(\mathbf{x}, t), t)||$, taking an $l_{1}$ norm \cite{bansal2022cold}.
+In Bansal et al. (2022, \cite{bansal2022cold}), a conceptual summary of degradation functions is given. Starting with image $\mathbf{x} \in \mathbb{R}$, the degradation of the image, or forward process of the encoder for the DDPM described in section 1.1.2, can be considered as follows: $\mathbf{x}_{t} = D(\mathbf{x}, t)$, where $D$ is the degradation operator and $t$ is the severity of the degradation. In other words, $D(\mathbf{x}, 0) = \mathbf{x}$. In Chapter 1, the $D$ operator consisted of adding Gaussian noise with variance described by the Variance/Noise Schedule $\beta_{1, \dots, T}$. In this chapter, a custom degradation function, or operator $D$, will be described and used to train the model on the MNIST dataset. The important part of the degradation function is that an inverse process, $R$, is required to invert $D$ and satisfies: $R(\mathbf{x}_t, t) \approx \mathbf{x}$, and $R(\mathbf{x}_t, 1) \approx \mathbf{x}_{t-1}$. As was discussed in Chapter 1, this is implemented through a neural network parameterized by $\phi_{t}$ and trained to minimize the loss $L = ||\mathbf{x} - R_{\phi}(D(\mathbf{x}, t), t)||$, taking an $l_{1}$ norm \cite{bansal2022cold}.
 
 \section{A Row/Column Averaging degradation function}
 
 Taking inspiration from the super-resolution degradation function described in Bansal et al. (2022) \cite{bansal2022cold}, a degradation function that averages the rows and columns of the image is proposed. An example of the degradation function for columns is described below:
 
 \begin{definitionbox}{Column Averaging Degradation Function in the forward process}
-  \begin{algorithmic}
+  \begin{algorithmic}[1]
     \State \textbf{Input:} Data $\mathbf{x}$
     \State \textbf{Output:} $\mathbf{x}_{0} = \mathbf{f}_{t}[\mathbf{z}_{t}, t]$
     \State \textbf{repeat}
@@ -400,12 +425,12 @@ In this forward process the column or row schedule is defined in 3 ways:
 - Inside-Out: [14,15,13,16,12,17,...]
 
 
-The degradation function then, given a time step $t$, will average the first $t$ rows/columns listed in the schedule. The loss is then calculated as the MSE between the original image and the image predicted by the model from that time step, and the model is trained to minimize this loss.
+The degradation function then, given a time step $t$, will average the first $t$ rows/columns listed in the schedule. Here, only the random schedule will be discussed, the other 2 being there for future experimentation. The loss is calculated as the MSE between the original image and the image predicted by the model from that time step, and the model is trained to minimize this loss.
 
-For the inverse process, algorithm 2 of the Bansal et al. (2022) paper is used, as it gives better performance for cold diffusion methods\cite[p. 4]{bansal2022cold}. The inverse process is described as follows:
+For the inverse process, algorithm 2 of the Bansal et al. (2022) paper is used, as it was found to give better performance for cold diffusion methods\cite[p. 4]{bansal2022cold}. The inverse process is described as follows:
 
 \begin{definitionbox}{Inverse Process for Column Averaging Degradation Function}
-  \begin{algorithmic}
+  \begin{algorithmic}[1]
     \State \textbf{Input:} Degraded Data $\mathbf{z}_{T}$
     \State \textbf{Output:} Prediction of original sample $\mathbf{x}$
       \For{$s = T, T-1, \dots, 1$} \Comment{For each time step in reverse order}
@@ -415,15 +440,17 @@ For the inverse process, algorithm 2 of the Bansal et al. (2022) paper is used, 
   \end{algorithmic}
 \end{definitionbox}
 
-Where $\mathbf{D}$ is the degradation function, so $\mathbf{D}(\hat{\mathbf{x}}, s)$ is the image $\hat{\mathbf{x}}$ degraded at time step $s$, with the first $s$ rows/columns in the schedule order averaged. The degradation was originally made to average rows/columns by groups of 4, resulting in a degraded image with 7 rows/columns. However, these led to too much information lost and more importantly only 7 time steps over which the model could learn how to de-average the rows/columns. With each row/column averaged on their own, this gives 28 time steps, which should allow the model to learn better how to de-average the rows/columns.
+Where $\mathbf{D}$ is the degradation function, so $\mathbf{D}(\hat{\mathbf{x}}, s)$ is the image $\hat{\mathbf{x}}$ degraded at time step $s$, with the first $s$ rows/columns in the schedule order averaged. The degradation was originally made to average rows/columns by groups of 4, resulting in a degraded image with 7 rows/columns. However, these led to too much information lost and more importantly only 7 time steps over which the model could learn how to de-average the rows/columns. Examples of the samples obtained with the groupings can be found in the Appendix. Both Fig \ref{fig:col7} \& \ref{fig:row7} show that the model struggles to re-construct the images when only given 7 averaged rows/columns. One thing to point out is that the degraded samples values have been extended to the -0.5 to 0.5, accentuating the contrast essentially. This is so the degradation can be better visualised. Indeed, since the images are a majority of black pixels, averaging leads to low values, and the actual degraded images are quite dark. However, this should not be an issue for the CNN. Though a point could be made that a larger value range may help the CNN reconstruct the image more easily. The advantage that grouping offered was a lighter computational cost. Maybe with a deeper CNN, reconstruction could be succesful though that would just negate the latter point.
+
+Thus, the model was trained with each row/column averaged on their own, which gives 28 time steps, and should allow the model to learn how to reconstruct the image better.
 
 
 \section{Training the modified model on the MNIST dataset}
 
 
-The non-grouped column averaging model is discussed here as it gave the best result. The model was trained for ... epochs, with the following hyperparameters:
+The non-grouped row averaging model is discussed here as it gave the best result (see Fig \ref{fig:col28}). The model was trained for 80 epochs, with the following hyperparameters:
 
-\begin{table}[h]
+\begin{table}[ht]
   \centering
   \begin{tabular}{c c}
     \hline
@@ -437,38 +464,83 @@ The non-grouped column averaging model is discussed here as it gave the best res
     Activation function & GELU \\
     \hline
   \end{tabular}
+  \captionsetup{font=footnotesize}
   \caption{Hyperparameters used for the training of the column averaging cold diffusion model}
   \label{tab:hyperparams3}
 \end{table}
 
-As before, samples are generated for epochs 1, 20, 40 and 60, and the results are shown in Figure \ref{fig:col_avg_samples}.  ... get numbers quickly but only certain ones. discussion about direction depemndent information. Model is therefore biased...
+As before, samples are generated for epochs 1, 20, 40 and 60, and the results are shown in Figure \ref{fig:row_avg_samples}. The first thing that can be noticed is that digits are being predicted as early as epoch 1. However, these are a majority of nines, showing some bias towards a certain type of digit. The predicitons can be seen to improve in quality over time, with different digits being predicted.
 
-In terms of the numbers...The loss at each iteration was obtained and are plotted together in Figure \ref{fig:loss3}.
-
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
-  \includegraphics[width=0.8\textwidth]{../Plots/losses_for_custom_col_default_28.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/custom_sample_0000_row_default_28.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/custom_sample_0020_row_default_28.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/custom_sample_0040_row_default_28.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/custom_sample_0060_row_default_28.png}
+  \captionsetup{font=footnotesize}
+  \caption{Samples generated by the row averaging degradation function, after 60 epochs, without grouping (Epoch 1: extreme left, Epoch 20: middle left, Epoch 40: middle right, Epoch 60: extreme right)}
+  \label{fig:row_avg_samples}
+\end{figure}
+
+And for the last epoch, the samples generated are shown in Figure \ref{fig:row_avg_samples2}, and are compared to the original, degraded and directly predicted ones. As can be seen the model is able to re-construct the samples quite well. However, there is an issue which is that the model is quite "shy", with the digits being faint, though looking similar to the original samples. Otherwise, these show agreement with the finding of Bansal et al. (2022), as using the gradual reconstruction algorithm (Algorithm 2) gives much better results than a direct prediction.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.2\textwidth]{../contents_custom/original_sample_0080_row_default_28.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/degraded_sample_0080_row_default_28.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/direct_sample_0080_row_default_28.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/custom_sample_0080_row_default_28.png}
+  \captionsetup{font=footnotesize}
+  \caption{Samples generated by the row averaging degradation function, after 80 epochs, without grouping (Original: extreme left, Degraded: middle left, Direct prediction: middle right, Algorithmic generation: extreme right)}
+  \label{fig:row_avg_samples2}
+\end{figure}
+
+In terms of the metrics for this model. The loss at each iteration and average loss over epochs were obtained and are plotted together in Figure \ref{fig:loss3}. The loss clearly falls quicker and lower than for the denoising diffusion model, and this agrees with the quality of the samples that were generated.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\textwidth]{../Plots/losses_for_custom_row_default_28.png}
+  \captionsetup{font=footnotesize}
   \caption{Loss at each iteration of the training process, and the average loss over each epoch}
   \label{fig:loss3}
 \end{figure}
 
-The FID score at each epoch is shown in Figure \ref{fig:fid_col_avg}, and the final FID score was found to be ... . The IS score at each epoch is shown in Figure \ref{fig:is_col_avg}, and the final IS score was found to be ... .
+The FID score at each epoch is shown in Figure \ref{fig:fid_col_avg}, and the final FID score was found to be $108.5$. This is higher than expected, though it may be explained by the very faint predictions. The IS score at each epoch is shown in Figure \ref{fig:is_col_avg}, and the final IS score was found to be $1.9 \pm 0.18$, compared to $1.7 \pm 0.24$ for real images. And though this size difference is not as expected ($IS_{real} > IS_{generated}$), the IS score does indicate larger values than for the noise diffusion model, which can be considered a good sign.
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
-  \includegraphics[width=0.8\textwidth]{../Plots/fid_for_custom_col_default_28.png}
+  \includegraphics[width=0.7\textwidth]{../Plots/fid_for_custom_row_default_28.png}
+  \captionsetup{font=footnotesize}
   \caption{FID score at each epoch of the training process}
   \label{fig:fid_col_avg}
+\end{figure}
 
-  \includegraphics[width=0.8\textwidth]{../Plots/incept_score_for_custom_col_default_28.png}
-  \caption{IS score at each epoch of the training process for the column averaging cold diffusion model}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\textwidth]{../Plots/incept_score_for_custom_row_default_28.png}
+  \captionsetup{font=footnotesize}
+  \caption{IS score at each epoch of the training process for the row averaging cold diffusion model}
   \label{fig:is_col_avg}
 \end{figure}
 
+\newpage
+\section{Unconditional Sampling}
 
-\section{Comparing with the original model}
+An important point to make is the way the generated digits were sampled. Unlike for the DDPM, the degraded samples given to the decoder/reverse process were fully degraded MNIST sampled images. This gave the option to compare the generated samples to original ones, however, this means the sampling was conditional\cite[Section 5]{bansal2022cold}. In addition to being restricting, this is also less efficient than being able to generate a degraded sample from a distribution.
 
-Evaluate the fidelity of the samples generated by the two models, discussing any differences between them.
+An attempt was made at unconditional sampling by simply creating a degraded image using different uniform distribution. Samples were generated with the fully trained row averaging model and the following results were obtained:
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.2\textwidth]{../notebooks/contents_lap/original_sample.png}
+  \includegraphics[width=0.2\textwidth]{../notebooks/contents_lap/degraded_sample.png}
+  \includegraphics[width=0.2\textwidth]{../notebooks/contents_lap/generated_sample.png}
+  \captionsetup{font=footnotesize}
+  \caption{Samples generated by the row averaging degradation function, after 80 epochs, using degraded samples created from a distribution (Original: left, Degraded: middle, Algorithmic generation: right)}
+  \label{fig:row_avg_samples3}
+\end{figure}
+
+Fig \ref{fig:row_avg_samples3} shows worse performance than for the conditional sampling, though it can be seen the degraded samples created are quite different to the ones obtained in the conditional sampling. Overall, this seems do-able though fine-tuning the distribution from which the row/column values are sampled is needed, adn should be the objective of any future work on this. Already, one such example of tuning was that they needed to be different for the row and column cases.
 
 
 
@@ -478,17 +550,94 @@ Evaluate the fidelity of the samples generated by the two models, discussing any
 
 Here is shown results obtained for the different versions of the degradation function.
 
-plot of original, degraded, direct sampled for col7
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.2\textwidth]{../contents_custom/original_sample_0060_col_default_7.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/degraded_sample_0060_col_default_7.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/direct_sample_0060_col_default_7.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/custom_sample_0060_col_default_7.png}
+  \captionsetup{font=footnotesize}
+  \caption{Samples generated by the column averaging degradation function, after 60 epochs, when grouping columns by 4 (Original: extreme left, Degraded: middle left, Direct prediction: middle right, Algorithmic generation: extreme right)}
+  \label{fig:col7}
+\end{figure}
 
-final loss, FID, IS for col7
+\begin{table}
+  \centering
+  \begin{tabular}{c c}
+    \hline
+    Metric & Final \\
+    \hline
+    Loss & $0.013$ \\
+    FID & $195.3$ \\
+    IS Generated & $1.44$ \\
+    \hline
+  \end{tabular}
+  \caption{Final loss, FID and IS for the column averaging degradation function with 7 columns, after 60 epochs}
+  \captionsetup{font=footnotesize}
+  \label{tab:col7}
+\end{table}
 
-plot of original, degraded, direct sampled for row7
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.2\textwidth]{../contents_custom/original_sample_0080_row_default_7.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/degraded_sample_0080_row_default_7.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/direct_sample_0080_row_default_7.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/custom_sample_0080_row_default_7.png}
+  \captionsetup{font=footnotesize}
+  \caption{Samples generated by the row averaging degradation function, after 80 epochs, when grouping rows by 4,(Original: extreme left, Degraded: middle left, Direct prediction: middle right, Algorithmic generation: extreme right)}
+  \label{fig:row7}
+\end{figure}
 
-final loss, FID, IS for row7
+\begin{table}
+  \centering
+  \begin{tabular}{c c}
+    \hline
+    Metric & Final \\
+    \hline
+    Loss & $0.0108$ \\
+    FID & $189.84$ \\
+    IS Generated & $1.97 \pm 0.32$ \\
+    IS Real & $1.79 \pm 0.23$ \\
+    \hline
+  \end{tabular}
+  \captionsetup{font=footnotesize}
+  \caption{Final loss, FID and IS for the row averaging degradation function with grouped rows, after 80 epochs}
+  \label{tab:row7}
+\end{table}
 
-plot of original, degraded, direct sampled for row28
+\newpage
 
-final loss, FID, IS for row28
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.2\textwidth]{../contents_custom/original_sample_0060_row_default_28.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/degraded_sample_0060_col_default_28.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/direct_sample_0060_col_default_28.png}
+  \includegraphics[width=0.2\textwidth]{../contents_custom/custom_sample_0060_col_default_28.png}
+  \captionsetup{font=footnotesize}
+  \caption{Samples generated by the column averaging degradation function, after 60 epochs, when not grouping columns,(Original: extreme left, Degraded: middle left, Direct prediction: middle right, Algorithmic generation: extreme right)}
+  \label{fig:col28}
+\end{figure}
+
+For ungrouped column averaging (Fig. \ref{fig:col28}), the generated samples are of decent quality but there is a bias towards certain digits, mainly those that have a more vertically uniform quality (1, 3, 8, 9, 0). This brings up the interesting point of there being more information lost when averaging columns rather than rows as numbers are generally taller than they are wide. In other words, when averaging rows, the model receives more rows that contain information about the digits than columns when averaging these. This is seen in the degraded samples image in Fig \ref{fig:row28} and \ref{fig:col28}.
+
+\begin{table}
+  \centering
+  \begin{tabular}{c c}
+    \hline
+    Metric & Final \\
+    \hline
+    Loss & $0.0078$ \\
+    FID & $115.9$ \\
+    IS Generated & $1.31 \pm 0.2$ \\
+    IS Real & $1.26 \pm 0.16$ \\
+    \hline
+  \end{tabular}
+  \captionsetup{font=footnotesize}
+  \caption{Final loss, FID and IS for the row averaging degradation function with 28 rows, after 80 epochs}
+  \label{tab:row28}
+\end{table}
+
+\newpage
 
 \section{AI tools use}
 
