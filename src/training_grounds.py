@@ -96,11 +96,11 @@ elif hyper_params == "more_capacity":
     lr = 2e-4
     n_hidden = (64, 128, 256, 128, 64)
     batch_size = 128
-elif hyper_params == "testing":
+elif hyper_params == "testing2":
     # Testing
     betas = (1e-4, 0.02)
-    n_T = 1000
-    lr = 2e-4
+    n_T = 1500
+    lr = 4e-4
     n_hidden = (16, 32, 32, 16)
     batch_size = 128
 if hyper_params == "default_7":
@@ -124,7 +124,7 @@ elif hyper_params == "more_capacity":
     order = 3
     grouping = "28"
     betas = (1e-4, 0.02)
-    n_T = 1000
+    n_T = 28
     lr = 2e-4
     n_hidden = (64, 128, 256, 128, 64)
     batch_size = 128
