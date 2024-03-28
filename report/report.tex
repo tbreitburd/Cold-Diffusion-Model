@@ -639,9 +639,100 @@ For ungrouped column averaging (Fig. \ref{fig:col28}), the generated samples are
 
 \newpage
 
-\section{AI tools use}
+\section{REAMDE}
 
-Ask chatgpt to summarise your prompts
+\subsection{M2 Coursework - Training Diffusion Models on the MNIST Dataset}
+
+\subsubsection{Description}
+This reporsitory contains the code and written report for the M2 Coursework. The aim was to first train a Denoising Diffusion Probababilistic Model (DDPM) for different hyperparameters sets and compare them. Second, a cold-diffusion model using a custom-made row or column averaging degradation function was developped and evaluate its performance compared to the DDPMs.
+
+\subsubsection{Contents}
+
+Inside this \texttt{tmb76/} directory, there are a few sub-directories one can explore. There's the code directory \texttt{src/}, which contains all the code used for the report. There is a \texttt{notebooks/} directory which contains notebook versions of the \texttt{src/} code. Including a \texttt{load\_and\_play.ipynb} notebook made to skip training the diffusion models. This project comes with pre-trained models weights and biases for all the models used in the project, for different epochs. These follow the following naming convention:
+
+For the DDPM models:
+\begin{lstlisting}[language=bash]
+ddpm_mnist_{epoch number}_{hyperparameter set used}.pth
+\end{lstlisting}
+
+Choices of epoch numbers are 0, 20, 40 , 60, and 80 (plus 100 for the default hyperparameter run). And the hyperparameter sets are either default, testing or testing2.
+
+And for the custom degradation cold diffusion models:
+\begin{lstlisting}[language=bash]
+custom_mnist_{epoch number}_{orientation}_{hyperparameter set used}.pth
+\end{lstlisting}
+
+where the epoch number choices are the same except for the grouped column averaging model (col\_default\_7) that only goes to 60 epochs.
+
+In the \texttt{load\_and\_play.ipynb} notebook, one can initialise the different diffusion models, then load the chosen/corresponding model state files with wights and biases, and then use this model to generate samples and then calculate some image quality metrics.
+
+An important note is that the code will give outputs in the command line but also store the plots in a \texttt{Plots/} directory which will be created as the first code file is run. So if there is no \texttt{Plots/} directory in the repository yet, running the solver once should lead to creating one. The same is true for the \texttt{contents/}, \texttt{contents\_custom/}, and \texttt{contents\_lap/} (for the \texttt{load\_and\_play.ipynb} notebook) directories in which generated and other samples are stored.
+
+
+The last one is the \texttt{Report/} directory, which contains the LaTeX file for the report, as well as the pdf version of it, along with the references \texttt{.bib} file.
+More importantly, there are an \texttt{environment.yml}/\texttt{requirements.txt} and \texttt{Dockerfile} files, which one is advised to use.
+
+\subsubsection{How to run the code}
+
+If one needs to run the code on different hardwares/supercomputers or re-train the models for a desired set of hyperparameters or number of epochs, they can use the \texttt{Dockerfile} provided in this repository. For permissions reasons, the \texttt{Dockerfile} is not set up to pull the repository directly as it builds the image. Therefore, one must first download this repository to their local machine and then are free to build the Docker image from the \texttt{Dockerfile}.
+
+To run the code on a Docker container, one first has to build the image and run the container. This can be done as follows:
+
+\begin{lstlisting}[language=bash]
+$ docker build -t m2_coursework .
+$ docker run --rm -ti m2_coursework
+\end{lstlisting}
+
+The \texttt{m2\_coursework} is not a strict naming instruction, it can be set to any other name the user may prefer.
+
+If there is a need to get the plots back on the local machine, the second line above can be ran without the \texttt{--rm} and also set the container name using \texttt{--name=container\_name} (any valid name is fine). From there, run all the code as instructed below. Once all desired outputs and plots have been obtained. One can exit the container and then run:
+
+\begin{lstlisting}[language=bash]
+$ docker cp docker cp container_name:/M2_Coursework/Plots ./Plots
+\end{lstlisting}
+
+The \texttt{Plots/} directory will get copied into the local folder the container was ran from. Similarly, for generated samples need to be copied locally, one can run:
+
+\begin{lstlisting}[language=bash]
+$ docker cp docker cp container_name:/M2_Coursework/path ./path
+\end{lstlisting}
+where path can be:
+- \texttt{contents}
+- \texttt{contents\_custom}
+- \texttt{notebooks/contents\_lap}
+
+
+With the build and run commands above, the Docker image will get built and the container ran, providing the user with a bash terminal-like interface where the code can be run. There are 3 files that can be run: \texttt{part\_1.py}, \texttt{part\_2.py}, and \texttt{training\_grounds.py}. The first enables one to train the DDPM model for a chosen number of epochs and hyperparameters, save it, generate samples and compute some image quality metrics at different stages of the training.
+
+\begin{lstlisting}[language=bash]
+$ python src/part_1.py {num_epochs} {hyper_parameters}
+\end{lstlisting}
+where num\_epochs can be any desired integer (see note on time), and the hyperparameters must be a string in the following list: 'default', 'light', 'more\_capacity', 'testing' and 'testing2'. The second file does the same for the custom degradation cold diffusion models and requires the additional argument of which axis the degradation function needs to average values:
+
+\begin{lstlisting}[language=bash]
+$ python src/part_2.py {num_epochs} {hyper_parameters} {orientation}
+\end{lstlisting}
+
+where the hyperparameters now must be one of the following: 'default\_7', 'default\_28', and 'more\_capacity'. \texttt{orientation} must be either 'row' or 'col'. Finally, the third file is there if one simply wants to train a model to use it elsewhere and not bother generating samples or evaluating the model with metrics. For this file, another argument is needed to specify if one wants to train the DDPM or custom degradation cold diffusion model:
+
+\begin{lstlisting}[language=bash]
+$ python src/training_grounds.py {num_epochs} {hyper_parameters} {custom_deg} {orientation}
+\end{lstlisting}
+
+The hyperparameters are all of the above, depending on which type of model is run, with the exception of the 'testing' hyperparameter set for the DDPM model. The \texttt{custom\_deg} argument is either 'True' or 'False' accordingly (Not a bool, but a string!).
+
+
+Note on time: Running the \texttt{part\_1.py} file was runnable locally overnight, with an average of 40 seconds per epoch. This is based on running all of these on a MacBook Air M2 (2022, Ventura 13.2.1), with 8 GB of Memory, so this may be slower on a container. Running the \texttt{part\_2.py} most likely requires the use of a GPU or powerful remote machine. Training was done using Amazon Sagemaker's EC2 P3 instances (NVidia V100 Tensor Core GPUs), and took an approximate 40 minutes for the grouped averaging custom degradation, and up to 2 hours to train the non-grouped averaging degradation function.
+
+
+\subsubsection{Further development}
+
+If one wishes to further develop this code, such as adding more algorithms to try, when the image is built, git is installed and initialized and the pre-commit hooks are installed.
+
+\subsubsection{Use of Generative AI}
+
+GitHub Copilot's autocompletion feature was used when writing docstrings for the functions, though sometimes adding elements ourselves as the functions were modified after writing the docstrings, and for repetitive parts of the code.
+ChatGPT was also used to help in debugging the code, by providing the traceback as a prompt when an error was difficult to understand, asking to explain what the error refers to. One was to deal with an issue building the dockerfile failing to solve a process where conda was not found to be installed on the image when trying to build the environment using the environment.yml file. A solution proposed and adopted was to use pip install with a requirements.txt file instead. A few prompts were about relative imports in the notebooks once they were moved to the \texttt{notebook/} directory. Also encountered an error related to the absence of an operator in torchvision. A few suggestions were givent to troubleshoot and resolve the error, and one working solve was to update torch and torchvision to the latest versions. Asked how to troubleshoot a RuntimeError related to input and weights types mismatch in PyTorch, and was advised to check the types of input and weight tensors, ensuring they are on the same device or converting them to the same type if necessary. One final instance of using chatgpt was to ask how one could repeat the sample tensors so they would have 3 identical channels as that was required by the FID and IS metrics methods from torchmetrics, the \texttt{.repeat(1,3,1,1)} solution was implemented.
 
 
 
