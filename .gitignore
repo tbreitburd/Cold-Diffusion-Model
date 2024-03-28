@@ -18,7 +18,6 @@ notebooks/contents/
 notebooks/data/
 notebooks/contents_lap
 
-*.pth
 
 Plots/
 
