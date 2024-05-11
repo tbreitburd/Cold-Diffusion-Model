@@ -1,11 +1,11 @@
-# M2 Coursework - Training Diffusion Models on the MNIST Dataset
+# Training Diffusion Models on the MNIST Dataset
 
 ## Description
-This reporsitory contains the code and written report for the M2 Coursework. The aim was to first train a Denoising Diffusion Probababilistic Model (DDPM) for different hyperparameters sets and compare them. Second, a cold-diffusion model using a custom-made row or column averaging degradation function was developped and evaluate its performance compared to the DDPMs.
+This reporsitory contains the code for the diffusion models and a report discussing the work carried out and the results obtained with the trained models. The aim was to first train a Denoising Diffusion Probababilistic Model (DDPM) for different hyperparameters sets and compare them. Second, a cold-diffusion model using a custom-made row or column averaging degradation function was developped and evaluate its performance compared to the DDPMs.
 
 ## Contents
 
-Inside this ```tmb76/``` directory, there are a few sub-directories one can explore. There's the code directory (```src/```), which contains all the code used for the report. There is a ```notebooks/``` directory which contains notebook versions of the ```src/``` code. Including a ```load_and_play.ipynb``` notebook made to skip training the diffusion models. This project comes with pre-trained models weights and biases for all the models used in the project, for different epochs. These follow the following naming convention:
+Inside this ```Cold_Diffusion_Model/``` directory, there are a few sub-directories one can explore. There's the code directory (```src/```), which contains all the code used for the report. There is a ```notebooks/``` directory which contains notebook versions of the ```src/``` code. Including a ```load_and_play.ipynb``` notebook made to skip training the diffusion models. This project comes with pre-trained models weights and biases for all the models used in the project, for different epochs. These follow the following naming convention:
 
 For the DDPM models:
 ```
@@ -35,11 +35,11 @@ If one needs to run the code on different hardwares/supercomputers or re-train t
 To run the code on a Docker container, one first has to build the image and run the container. This can be done as follows:
 
 ```bash
-$ docker build -t m2_coursework .
-$ docker run --rm -ti m2_coursework
+$ docker build -t cold_dif_model .
+$ docker run --rm -ti cold_dif_model
 ```
 
-The ```m2_coursework``` is not a strict naming instruction, it can be set to any other name the user may prefer.
+The ```cold_dif_model``` is not a strict naming instruction, it can be set to any other name the user may prefer.
 
 If there is a need to get the plots back on the local machine, the second line above can be ran without the ```--rm``` and also set the container name using ```--name=container_name``` (any valid name is fine). From there, run all the code as instructed below. Once all desired outputs and plots have been obtained. One can exit the container and then run:
 
